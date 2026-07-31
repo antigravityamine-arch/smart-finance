@@ -13,6 +13,7 @@ app.secret_key = 'smart_finance_super_secret_key'
 
 import sqlite3
 import json
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
 DB_FILE = os.path.join(os.path.dirname(__file__), 'smart_finance.db')
 
@@ -32,20 +33,45 @@ is_on_pythonanywhere = (
     '/home/' in os.path.abspath(__file__)
 )
 
+def _test_firebase_connection():
+    """فحص اتصال Firebase في thread منفصل لمنع أي تعليق"""
+    cred_path = os.path.join(os.path.dirname(__file__), 'firebase_credentials.json')
+    if not os.path.exists(cred_path):
+        return None, "firebase_credentials.json not found"
+    if not firebase_admin._apps:
+        cred = credentials.Certificate(cred_path)
+        firebase_admin.initialize_app(cred)
+    client = firestore.client()
+    # فحص حقيقي - محاولة قراءة مستند واحد
+    client.collection('_connection_test').document('test').get()
+    return client, "OK"
+
 if not is_on_pythonanywhere:
+    print("Local environment detected. Testing Firebase connection (max 3 seconds)...")
     try:
-        if not firebase_admin._apps:
-            cred_path = os.path.join(os.path.dirname(__file__), 'firebase_credentials.json')
-            if os.path.exists(cred_path):
-                cred = credentials.Certificate(cred_path)
-                firebase_admin.initialize_app(cred)
-                db = firestore.client()
-                USE_FIREBASE = True
-                print("Firebase initialized successfully (Local Environment)")
-            else:
-                print("firebase_credentials.json not found, falling back to SQLite")
+        executor = ThreadPoolExecutor(max_workers=1)
+        future = executor.submit(_test_firebase_connection)
+        result_db, msg = future.result(timeout=3)
+        if result_db:
+            db = result_db
+            USE_FIREBASE = True
+            print("[OK] Firebase connected and verified successfully (Local Environment)")
+        else:
+            print(f"[WARN] {msg}, falling back to SQLite")
+        # لا نستخدم with لكي لا ينتظر إغلاق الـ Thread الميت
+
+    except (FutureTimeoutError, TimeoutError):
+        db = None
+        USE_FIREBASE = False
+        print("[WARN] Firebase connection timed out (3s). Using SQLite locally.")
     except Exception as e:
-        print(f"Failed to initialize Firebase, falling back to SQLite: {e}")
+        db = None
+        USE_FIREBASE = False
+        print(f"[WARN] Firebase error: {e}. Using SQLite locally.")
+else:
+    print("[INFO] PythonAnywhere detected. Using SQLite database.")
+
+print(f"[INFO] Database mode: {'Firebase' if USE_FIREBASE else 'SQLite'}")
 
 def get_all_clients():
     if USE_FIREBASE and db:
