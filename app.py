@@ -21,11 +21,18 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-# تهيئة قاعدة البيانات (Firebase للمحلي، و SQLite للمرفوع على PythonAnywhere)
+# تهيئة قاعدة البيانات الافتراضية
 db = None
 USE_FIREBASE = False
 
-if 'PYTHONANYWHERE_SITE' not in os.environ:
+# التحقق بدقة 100% هل نحن على سيرفر PythonAnywhere أم محلياً
+is_on_pythonanywhere = (
+    'PYTHONANYWHERE_SITE' in os.environ or 
+    'PYTHONANYWHERE_DOMAIN' in os.environ or 
+    '/home/' in os.path.abspath(__file__)
+)
+
+if not is_on_pythonanywhere:
     try:
         if not firebase_admin._apps:
             cred_path = os.path.join(os.path.dirname(__file__), 'firebase_credentials.json')
