@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}الرئيسية{% endblock %}
+{% block content %}
+<div class="topbar">
+    <div>
+        <h1>الرئيسية</h1>
+        <p style="color:#6B7280;font-size:14px;">نظرة عامة على المنصة والنموذج</p>
+    </div>
+    <div class="info">
+        <span>📅 {{ date }}</span>
+        <span>🔔</span>
+        <span>👤 مسؤول المخاطر</span>
+    </div>
+</div>
+
+<div class="stats">
+    <div class="stat-card">
+        <div class="label">👥 إجمالي العملاء</div>
+        <div class="value">{{ stats.total }}</div>
+        <div class="sub">إجمالي قاعدة البيانات</div>
+    </div>
+    <div class="stat-card green">
+        <div class="label">✅ منخفض الخطر</div>
+        <div class="value">{{ stats.low }}</div>
+        <div class="sub">{{ stats.low_pct }}% من الإجمالي</div>
+    </div>
+    <div class="stat-card orange">
+        <div class="label">⚠️ متوسط الخطر</div>
+        <div class="value">{{ stats.mid }}</div>
+        <div class="sub">{{ stats.mid_pct }}% من الإجمالي</div>
+    </div>
+    <div class="stat-card red">
+        <div class="label">🚨 مرتفع الخطر</div>
+        <div class="value">{{ stats.high }}</div>
+        <div class="sub">{{ stats.high_pct }}% من الإجمالي</div>
+    </div>
+</div>
+
+<div class="cards-row">
+    <div class="card">
+        <h3>📊 معلومات النموذج</h3>
+        <div class="model-info">
+            <div class="model-row"><span class="key">النموذج المستخدم</span><span class="val">XGBoost</span></div>
+            <div class="model-row"><span class="key">مصدر البيانات</span><span class="val">Home Credit Dataset</span></div>
+            <div class="model-row"><span class="key">AUC</span><span class="val">0.751</span></div>
+            <div class="model-row"><span class="key">عتبة التصنيف</span><span class="val">0.15</span></div>
+            <div class="model-row"><span class="key">حالة النموذج</span><span class="val"><span class="badge">نشط</span></span></div>
+        </div>
+    </div>
+    <div class="card">
+        <h3>📈 توزيع مستويات الخطر</h3>
+        <div class="risk-bars">
+            <div class="risk-bar">
+                <div class="info-row"><span style="color:#0F7A4F">منخفض الخطر</span><span>{{ stats.low_pct }}%</span></div>
+                <div class="bar"><div class="bar-fill green" style="width: {{ stats.low_pct }}%"></div></div>
+            </div>
+            <div class="risk-bar">
+                <div class="info-row"><span style="color:#C76A00">متوسط الخطر</span><span>{{ stats.mid_pct }}%</span></div>
+                <div class="bar"><div class="bar-fill orange" style="width: {{ stats.mid_pct }}%"></div></div>
+            </div>
+            <div class="risk-bar">
+                <div class="info-row"><span style="color:#A83232">مرتفع الخطر</span><span>{{ stats.high_pct }}%</span></div>
+                <div class="bar"><div class="bar-fill red" style="width: {{ stats.high_pct }}%"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+    <h3>⚖️ مقارنة بين التمويل التقليدي والتشاركي</h3>
+    <div class="compare">
+        <div class="compare-card trad">
+            <h4>🏦 التمويل التقليدي</h4>
+            <p>يعتمد على الجدارة الائتمانية واحتمال التعثر لاتخاذ قرار القبول أو الرفض. يركز على نسبة الفائدة والضمانات المالية.</p>
+        </div>
+        <div class="compare-card part">
+            <h4>🤝 التمويل التشاركي</h4>
+            <p>يضيف طبقة فحص شرعي إضافية. يقترح صيغة تمويل مناسبة (مرابحة، مشاركة، إجارة) مع مراعاة الضوابط الشرعية.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

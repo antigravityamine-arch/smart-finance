@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}التقارير{% endblock %}
+{% block head %}
+<style>
+    /* أنماط مخصصة للطباعة */
+    @media print {
+        @page { size: A4; margin: 15mm; }
+        body { background: white !important; font-family: 'Tajawal', Arial, sans-serif; color: #000; }
+        .sidebar, .mobile-header, .overlay { display: none !important; }
+        .main-content, .main { margin: 0 !important; width: 100% !important; padding: 0 !important; background: white !important; }
+        .topbar { display: none !important; }
+        .print-header { display: flex !important; justify-content: space-between; align-items: center; border-bottom: 2px solid #063B2E; padding-bottom: 15px; margin-bottom: 25px; }
+        .print-header h1 { font-size: 24px; color: #063B2E; margin: 0; }
+        .print-header .logo { font-size: 28px; color: #B88917; }
+        .print-header p { margin: 5px 0 0 0; font-size: 14px; color: #666; }
+        .stats { display: flex !important; flex-wrap: wrap !important; gap: 15px !important; margin-bottom: 30px !important; }
+        .stat-card { border: 1px solid #ccc !important; box-shadow: none !important; background: white !important; flex: 1; padding: 15px !important; page-break-inside: avoid; }
+        .table-card { box-shadow: none !important; border: 1px solid #ccc !important; }
+        table { width: 100% !important; border-collapse: collapse !important; }
+        th, td { border: 1px solid #ddd !important; padding: 10px !important; text-align: right; }
+        th { background-color: #f8f9fa !important; color: #000 !important; -webkit-print-color-adjust: exact; }
+        .badge-risk { border: 1px solid #999; background: transparent !important; color: #000 !important; padding: 3px 8px; border-radius: 4px; display: inline-block; white-space: nowrap !important; }
+        .badge-risk.low::before { content: '🟢 '; }
+        .badge-risk.mid::before { content: '🟠 '; }
+        .badge-risk.high::before { content: '🔴 '; }
+        /* إخفاء الألوان الخلفية للشارات في الطباعة لتوفير الحبر ولجعلها رسمية أكثر */
+    }
+    
+    .print-header { display: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ترويسة الطباعة (تظهر فقط عند الطباعة) -->
+<div class="print-header">
+    <div>
+        <h1>التقرير الشامل للمحفظة الائتمانية</h1>
+        <p>تاريخ استخراج التقرير: {{ date if date else 'اليوم' }}</p>
+    </div>
+    <div style="text-align: left;">
+        <div class="logo">🏛️ منصة إدارة المخاطر</div>
+        <p>التمويل الذكي (تقليدي وتشاركي)</p>
+    </div>
+</div>
+
+<div class="topbar">
+    <div>
+        <div class="breadcrumb"><a href="/dashboard">الرئيسية</a> / التقارير</div>
+        <h1>التقارير والإحصائيات</h1>
+        <p>استعراض التقارير الدورية وتحليلات محفظة التمويل</p>
+    </div>
+    <button class="btn-assess" onclick="window.print()" style="padding: 10px 20px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 18px;">🖨️</span> طباعة التقرير (PDF)
+    </button>
+</div>
+
+<div class="stats" style="margin-bottom:20px;">
+    <div class="stat-card">
+        <div class="left">
+            <div class="label">إجمالي العمليات</div>
+            <div class="value">{{ total }}</div>
+        </div>
+        <div class="icon" style="color:#14213D;">📊</div>
+    </div>
+    <div class="stat-card">
+        <div class="left">
+            <div class="label">تمويل تشاركي</div>
+            <div class="value">{{ part }}</div>
+        </div>
+        <div class="icon" style="color:#0F5C45;">🤝</div>
+    </div>
+    <div class="stat-card">
+        <div class="left">
+            <div class="label">تمويل تقليدي</div>
+            <div class="value">{{ trad }}</div>
+        </div>
+        <div class="icon" style="color:#1D4ED8;">🏦</div>
+    </div>
+</div>
+
+<div class="table-card">
+    <h3 style="padding: 20px; border-bottom: 1px solid #E1D8C6; margin: 0;">سجل آخر العمليات والتقييمات</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>معرف العميل</th>
+                <th>نوع التمويل</th>
+                <th>المبلغ</th>
+                <th>تاريخ الطلب</th>
+                <th>القرار المقترح</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in clients %}
+            <tr>
+                <td>{{ c.id }}</td>
+                <td>{{ c.finance_type }}</td>
+                <td>{{ "{:,.0f}".format(c.loan_amount) }} درهم</td>
+                <td>{{ c.date }}</td>
+                <td>
+                    {% if c.risk_level == 'منخفض' %}
+                        <span class="badge-risk low">مقبول</span>
+                    {% elif c.risk_level == 'متوسط' %}
+                        <span class="badge-risk mid">شروط إضافية</span>
+                    {% else %}
+                        <span class="badge-risk high">مرفوض</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

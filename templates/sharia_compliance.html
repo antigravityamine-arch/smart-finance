@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}الامتثال الشرعي{% endblock %}
+
+{% block head %}
+<style>
+    /* أنماط مخصصة للطباعة */
+    @media print {
+        @page { size: A4; margin: 15mm; }
+        body { background: white !important; font-family: 'Tajawal', Arial, sans-serif; color: #000; }
+        .sidebar, .mobile-header, .overlay { display: none !important; }
+        .main-content, .main { margin: 0 !important; width: 100% !important; padding: 0 !important; background: white !important; }
+        .topbar { display: none !important; }
+        .print-header { display: flex !important; justify-content: space-between; align-items: center; border-bottom: 2px solid #063B2E; padding-bottom: 15px; margin-bottom: 25px; }
+        .print-header h1 { font-size: 24px; color: #063B2E; margin: 0; }
+        .print-header .logo { font-size: 28px; color: #B88917; }
+        .print-header p { margin: 5px 0 0 0; font-size: 14px; color: #666; }
+        .stats, .table-card { box-shadow: none !important; border: 1px solid #ccc !important; }
+        table { width: 100% !important; border-collapse: collapse !important; }
+        th, td { border: 1px solid #ddd !important; padding: 10px !important; text-align: right; }
+        th { background-color: #f8f9fa !important; color: #000 !important; -webkit-print-color-adjust: exact; }
+        .badge-risk, .badge-ok, .badge-warn { border: 1px solid #999; background: transparent !important; color: #000 !important; padding: 3px 8px; border-radius: 4px; display: inline-block; white-space: nowrap !important; }
+        .badge-ok::before { content: '🟢 '; }
+        .badge-warn::before { content: '🟠 '; }
+        .badge-risk.high::before { content: '🔴 '; }
+        form { display: none !important; }
+    }
+    
+    .print-header { display: none; }
+</style>
+{% endblock %}
+{% block content %}
+<!-- ترويسة الطباعة -->
+<div class="print-header">
+    <div>
+        <h1>تقرير الفحص والامتثال الشرعي</h1>
+        <p>تاريخ الفحص: {{ date if date else 'اليوم' }}</p>
+    </div>
+    <div style="text-align: left;">
+        <div class="logo">🏛️ منصة إدارة المخاطر</div>
+        <p>التمويل الذكي (تقليدي وتشاركي)</p>
+    </div>
+</div>
+
+<div class="topbar">
+    <div>
+        <div class="breadcrumb"><a href="/dashboard">الرئيسية</a> / الامتثال الشرعي</div>
+        <h1>الامتثال الشرعي</h1>
+        <p>فحص توافق العملية التمويلية مع الضوابط الشرعية المستندة إلى معايير AAOIFI</p>
+    </div>
+    <button class="btn-assess" onclick="window.print()" style="padding: 10px 20px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 18px;">🖨️</span> طباعة التقرير (PDF)
+    </button>
+</div>
+
+<form method="GET" action="{{ url_for('sharia_compliance') }}" class="filters">
+    <label style="color: #6B7280; font-size: 13px;">اختيار العميل</label>
+    <select name="client_id" class="filter-select">
+        {% for c in clients %}
+        <option value="{{ c.id }}" {% if c.id == client.id %}selected{% endif %}>{{ c.id }} - {{ c.job }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="btn-add">🔍 فحص الامتثال</button>
+    <div style="color: #6B7280; font-size: 13px; margin-right: auto;">📅 تاريخ التقرير: {{ client.date }}</div>
+</form>
+
+<div class="two-cards">
+    <div class="summary-card">
+        <h3>📋 ملخص العملية التمويلية</h3>
+        <div class="model-row"><span class="key">معرف العميل</span><span class="val">{{ client.id }}</span></div><br>
+        <div class="model-row"><span class="key">المهنة</span><span class="val">{{ client.job }}</span></div><br>
+        <div class="model-row"><span class="key">مبلغ التمويل</span><span class="val">{{ "{:,.0f}".format(client.loan_amount) }} درهم</span></div><br>
+        <div class="model-row"><span class="key">نوع التمويل المطلوب</span><span class="val">{{ client.finance_type }}</span></div><br>
+        <div class="model-row">
+            <span class="key">مستوى الخطر الائتماني</span>
+            <span class="val" style="color:{% if client.risk_level == 'منخفض' %}#0F7A4F{% elif client.risk_level == 'متوسط' %}#C76A00{% else %}#A83232{% endif %}">{{ client.risk_level }}</span>
+        </div><br>
+    </div>
+
+    <div class="card" style="text-align: center;">
+        <h3 style="text-align: right;">🏆 نتيجة الامتثال الشرعي</h3>
+        <div style="width: 120px; height: 120px; border-radius: 50%; border: 8px solid {% if score >= 85 %}#0F7A4F{% elif score >= 60 %}#B88917{% else %}#A83232{% endif %}; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 15px;">
+            <div style="font-size: 28px; font-weight: bold; color: #14213D;">{{ score }}%</div>
+            <div style="font-size: 11px; color: #6B7280;">درجة الامتثال</div>
+        </div>
+        <div style="margin-bottom:8px;color:#6B7280;font-size:13px;">حالة الامتثال</div>
+        <div class="badge-risk {% if score >= 85 %}low{% elif score >= 60 %}mid{% else %}high{% endif %}" style="display:inline-block; padding: 6px 18px; margin-bottom: 10px;">● {{ status }}</div>
+        
+        <div style="font-size: 14px; color: #14213D; margin-bottom: 10px;">القرار الشرعي: <strong>
+            {% if score >= 85 %}اعتماد العملية{% elif score >= 60 %}اعتماد مع تعديل شروط العقد{% else %}لا يمكن الاعتماد بهيكلتها الحالية{% endif %}
+        </strong></div>
+        <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 12px; font-size: 12px; color: #6B7280; text-align: right; margin-top: 10px;">ℹ️ هذا الفحص يمثل إطاراً مساعداً لاتخاذ القرار، ولا يعوض دور هيئة الرقابة الشرعية.</div>
+    </div>
+</div>
+
+<div class="table-card" style="margin-bottom: 20px;">
+    <h3 style="font-size: 15px; color: #14213D; padding: 20px 25px; border-bottom: 1px solid #E1D8C6;">⚖️ معايير الفحص الشرعي (مستندة إلى معايير AAOIFI)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>المعيار</th>
+                <th>الوصف</th>
+                <th>الحالة</th>
+                <th>الملاحظة</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>مشروعية النشاط</strong></td>
+                <td>النشاط الممول لا يتعارض مع أحكام الشريعة الإسلامية</td>
+                <td><span class="badge-ok">✓ مطابق</span></td>
+                <td>نشاط {{ client.job }} مقبول.</td>
+            </tr>
+            <tr>
+                <td><strong>تحريم الربا</strong></td>
+                <td>خلو العقد من الفوائد الربوية (فائدة على القرض)</td>
+                <td>
+                    {% if client.finance_type == 'تقليدي' %}
+                    <span class="badge-risk high" style="padding:4px 8px; font-size:11px;">✗ غير مطابق</span>
+                    {% else %}
+                    <span class="badge-ok">✓ مطابق</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if client.finance_type == 'تقليدي' %}
+                    القروض التقليدية تعتمد على الفائدة المحرمة شرعاً.
+                    {% else %}
+                    التمويل التشاركي خالي من الفوائد الربوية.
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>وجود أصل حقيقي</strong></td>
+                <td>التمويل مرتبط بأصل ملموس ومملوك للتمويل</td>
+                <td>
+                    {% if client.finance_type == 'تقليدي' %}
+                    <span class="badge-risk high" style="padding:4px 8px; font-size:11px;">✗ غير مطابق</span>
+                    {% else %}
+                    <span class="badge-ok">✓ مطابق</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if client.finance_type == 'تقليدي' %}
+                    قرض نقدي غير مرتبط بأصل حقيقي (Cash loan).
+                    {% else %}
+                    يتطلب توفر أصل للمبلغ {{ "{:,.0f}".format(client.loan_amount) }} درهم.
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>تجنب الغرر والميسر</strong></td>
+                <td>العقد خال من الغرر الفاحش والميسر</td>
+                <td><span class="badge-ok">✓ مطابق</span></td>
+                <td>عقود موثقة ومطابقة.</td>
+            </tr>
+            <tr>
+                <td><strong>تقاسم المخاطر</strong></td>
+                <td>توزيع المخاطر بين الأطراف بشكل عادل</td>
+                <td>
+                    {% if client.risk_level == 'مرتفع' %}
+                    <span class="badge-risk high" style="padding:4px 8px; font-size:11px;">✗ مخاطرة مفرطة</span>
+                    {% elif client.finance_type == 'تقليدي' %}
+                    <span class="badge-warn" style="padding:4px 8px; font-size:11px;">⚠ غير مطابق</span>
+                    {% else %}
+                    <span class="badge-ok">✓ مطابق</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if client.risk_level == 'مرتفع' %}
+                    مخاطرة الائتمان عالية جداً مما قد يوقع العميل في حرج مالي.
+                    {% elif client.finance_type == 'تقليدي' %}
+                    الهيكلة التقليدية قد تفتقر للمشاركة في المخاطرة.
+                    {% else %}
+                    التمويل التشاركي يحقق شرط التوازن.
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}

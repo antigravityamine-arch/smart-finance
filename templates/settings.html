@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% block title %}الإعدادات{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <div class="breadcrumb"><a href="/dashboard">الرئيسية</a> / الإعدادات</div>
+        <h1>الإعدادات</h1>
+        <p>ضبط إعدادات النظام وقواعد التقييم والامتثال</p>
+    </div>
+</div>
+
+<div class="tabs">
+    <button class="tab active" onclick="scrollToSec('sec-general', this)">⚙️ عام</button>
+    <button class="tab" onclick="scrollToSec('sec-model', this)">🔬 النموذج</button>
+    <button class="tab" onclick="scrollToSec('sec-risk', this)">⚠️ عتبات الخطر</button>
+    <button class="tab" onclick="scrollToSec('sec-decision', this)">⚖️ قواعد القرار</button>
+    <button class="tab" onclick="scrollToSec('sec-sharia', this)">🛡 الامتثال الشرعي</button>
+    <button class="tab" onclick="scrollToSec('sec-logs', this)">🕐 سجل التعديلات</button>
+</div>
+
+<div class="three-cols">
+    <div class="settings-card" id="sec-general">
+        <h3>⚙️ إعدادات عامة</h3>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div style="color: #065F46; background: #D1FAE5; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 13px;">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        <div class="setting-row"><span class="key">اللغة</span><span class="val">{{ settings.language }}</span></div>
+        <div class="setting-row"><span class="key">العملة</span><span class="val">{{ settings.currency }}</span></div>
+        <div class="setting-row"><span class="key">المنطقة الزمنية</span><span class="val">{{ settings.timezone }}</span></div>
+        <div class="setting-row"><span class="key">نمط العرض</span><span class="val">{{ settings.display_mode }}</span></div>
+        <div class="setting-row"><span class="key">عدد النتائج في الصفحة</span><span class="val">{{ settings.results_per_page }}</span></div>
+        <div class="setting-row"><span class="key">صلاحية الجلسة</span><span class="val">{{ settings.session_timeout }} دقيقة</span></div>
+        <button class="btn-edit" onclick="document.getElementById('generalModal').style.display='flex'">✏️ تعديل الإعدادات العامة</button>
+    </div>
+
+    <div class="settings-card" id="sec-model">
+        <h3>🔬 إعدادات النموذج</h3>
+        <div class="setting-row"><span class="key">النموذج المستخدم</span><span class="val">XGBoost</span></div>
+        <div class="setting-row"><span class="key">نسخة النموذج</span><span class="val">v1.0</span></div>
+        <div class="setting-row"><span class="key">مصدر بيانات التدريب</span><span class="val">Home Credit Dataset</span></div>
+        <div class="setting-row"><span class="key">عتبة التصنيف (Threshold)</span><span class="val">0.15</span></div>
+        <div class="setting-row"><span class="key">حالة النموذج</span><span class="val"><span class="badge-risk low">● نشط</span></span></div>
+        <button class="btn-edit" onclick="alert('جاري إعداد واجهة التفاصيل...')">ℹ️ معلومات النموذج</button>
+    </div>
+
+    <div class="settings-card" id="sec-risk">
+        <h3>⚠️ عتبات مستوى الخطر</h3>
+        <table class="risk-table">
+            <thead>
+                <tr>
+                    <th>مستوى الخطر</th>
+                    <th>النظام (احتمال التعثر)</th>
+                    <th>اللون</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="color: #0F7A4F; font-weight: bold;">منخفض</td>
+                    <td>أقل من 15%</td>
+                    <td><span class="badge-risk low">●</span></td>
+                </tr>
+                <tr>
+                    <td style="color: #C76A00; font-weight: bold;">متوسط</td>
+                    <td>من 15% إلى 40%</td>
+                    <td><span class="badge-risk mid">●</span></td>
+                </tr>
+                <tr>
+                    <td style="color: #A83232; font-weight: bold;">مرتفع</td>
+                    <td>أكثر من 40%</td>
+                    <td><span class="badge-risk high">●</span></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="notice-box" style="margin-top:10px;">ℹ️ يتم استخدام هذه العتبات لتحديد مستوى الخطر وتطبيق قواعد القرار.</div>
+    </div>
+</div>
+
+<div class="two-cols" id="sec-decision">
+    <div class="settings-card">
+        <h3>🏦 قواعد القرار في التمويل التقليدي</h3>
+        <table class="risk-table">
+            <thead>
+                <tr>
+                    <th>مستوى الخطر</th>
+                    <th>القرار المقترح</th>
+                    <th>ملاحظات</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="color: #0F7A4F; font-weight: bold;">منخفض</td>
+                    <td>قبول</td>
+                    <td>تمويل دون شروط إضافية</td>
+                </tr>
+                <tr>
+                    <td style="color: #C76A00; font-weight: bold;">متوسط</td>
+                    <td>قبول مع شروط</td>
+                    <td>تقليل مبلغ القرض / طلب ضمان</td>
+                </tr>
+                <tr>
+                    <td style="color: #A83232; font-weight: bold;">مرتفع</td>
+                    <td>رفض</td>
+                    <td>مخاطر عالية على عدم السداد</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="settings-card">
+        <h3>🤝 قواعد القرار في التمويل التشاركي</h3>
+        <table class="risk-table">
+            <thead>
+                <tr>
+                    <th>مستوى الخطر</th>
+                    <th>القرار المقترح</th>
+                    <th>ملاحظات</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="color: #0F7A4F; font-weight: bold;">منخفض</td>
+                    <td>مرابحة أو مشاركة</td>
+                    <td>اعتماد الصيغة حسب طبيعة العميل</td>
+                </tr>
+                <tr>
+                    <td style="color: #C76A00; font-weight: bold;">متوسط</td>
+                    <td>مرابحة مع ضمانات</td>
+                    <td>تطلب دفعة أولى أكبر</td>
+                </tr>
+                <tr>
+                    <td style="color: #A83232; font-weight: bold;">مرتفع</td>
+                    <td>رفض أو مشاركة مقيدة</td>
+                    <td>توثيق أصل الممول ومراجعة إضافية</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="settings-card" id="sec-sharia" style="margin-bottom:20px;">
+    <h3>🛡 إعدادات الامتثال الشرعي</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div>
+            <div class="setting-row"><span class="key">تفعيل فحص الامتثال الشرعي</span><span class="val">
+                {% if settings.sharia_enabled %}<span class="badge-risk low">● مفعل</span>{% else %}<span class="badge-risk high">● معطل</span>{% endif %}
+            </span></div>
+            <div class="setting-row"><span class="key">مصدر المعايير الشرعية</span><span class="val">{{ settings.sharia_source }}</span></div>
+            <div class="setting-row"><span class="key">تحديث المعايير</span><span class="val">{{ settings.sharia_update }}</span></div>
+        </div>
+        <div>
+            <div style="font-size:13px;color:#6B7280;margin-bottom:10px;">المعايير المفعلة في الفحص</div>
+            <div class="check-list" style="font-size:13px; line-height: 1.8;">
+                <div><span style="color: #0F7A4F;">✓</span> مشروعية النشاط</div>
+                <div><span style="color: #0F7A4F;">✓</span> وجود أصل حقيقي</div>
+                <div><span style="color: #0F7A4F;">✓</span> وضوح الثمن والهامش</div>
+                <div><span style="color: #0F7A4F;">✓</span> تجنب الغرر والميسر</div>
+                <div><span style="color: #0F7A4F;">✓</span> الشفافية والإفصاح</div>
+            </div>
+            <button class="btn-edit" style="margin-top:15px;" onclick="document.getElementById('shariaModal').style.display='flex'">⚙️ تعديل المعايير الشرعية</button>
+        </div>
+    </div>
+</div>
+
+<div class="settings-card" id="sec-logs" style="margin-bottom:20px;">
+    <h3>🕐 سجل التعديلات</h3>
+    <div style="padding: 30px; text-align: center; color: #6B7280; font-size: 14px; background: #F8F5EC; border-radius: 8px; margin-top: 15px;">
+        لا توجد تعديلات مسجلة حديثاً في النظام.
+    </div>
+</div>
+
+<!-- Modal General Settings -->
+<div id="generalModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:white; padding:30px; border-radius:12px; width:400px; max-width:90%;">
+        <h3 style="margin-bottom:20px; color:#14213D;">تعديل الإعدادات العامة</h3>
+        <form method="POST" action="{{ url_for('update_settings') }}" style="display:flex; flex-direction:column; gap:15px;">
+            <input type="hidden" name="form_type" value="general">
+            <div>
+                <label style="display:block; margin-bottom:5px; font-size:13px; color:#6B7280;">اللغة</label>
+                <select name="language" style="width:100%; padding:10px; border:1px solid #E1D8C6; border-radius:8px;">
+                    <option value="العربية" {% if settings.language == 'العربية' %}selected{% endif %}>العربية</option>
+                    <option value="English" {% if settings.language == 'English' %}selected{% endif %}>English</option>
+                </select>
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-size:13px; color:#6B7280;">العملة</label>
+                <input type="text" name="currency" value="{{ settings.currency }}" style="width:100%; padding:10px; border:1px solid #E1D8C6; border-radius:8px;">
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-size:13px; color:#6B7280;">المنطقة الزمنية</label>
+                <input type="text" name="timezone" value="{{ settings.timezone }}" style="width:100%; padding:10px; border:1px solid #E1D8C6; border-radius:8px;">
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-size:13px; color:#6B7280;">صلاحية الجلسة (دقائق)</label>
+                <input type="number" name="session_timeout" value="{{ settings.session_timeout }}" style="width:100%; padding:10px; border:1px solid #E1D8C6; border-radius:8px;">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                <button type="button" onclick="document.getElementById('generalModal').style.display='none'" style="padding:10px 15px; background:#F8F5EC; border:1px solid #E1D8C6; border-radius:8px; cursor:pointer;">إلغاء</button>
+                <button type="submit" style="padding:10px 15px; background:#063B2E; color:white; border:none; border-radius:8px; cursor:pointer;">حفظ</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Sharia Settings -->
+<div id="shariaModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:white; padding:30px; border-radius:12px; width:400px; max-width:90%;">
+        <h3 style="margin-bottom:20px; color:#14213D;">تعديل المعايير الشرعية</h3>
+        <form method="POST" action="{{ url_for('update_settings') }}" style="display:flex; flex-direction:column; gap:15px;">
+            <input type="hidden" name="form_type" value="sharia">
+            <div>
+                <label style="display:flex; align-items:center; gap:10px; font-size:14px; color:#14213D; cursor:pointer;">
+                    <input type="checkbox" name="sharia_enabled" {% if settings.sharia_enabled %}checked{% endif %} style="width:18px; height:18px;">
+                    تفعيل الفحص الشرعي
+                </label>
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-size:13px; color:#6B7280;">مصدر المعايير الشرعية</label>
+                <select name="sharia_source" style="width:100%; padding:10px; border:1px solid #E1D8C6; border-radius:8px;">
+                    <option value="AAOIFI" {% if settings.sharia_source == 'AAOIFI' %}selected{% endif %}>AAOIFI</option>
+                    <option value="IFSB" {% if settings.sharia_source == 'IFSB' %}selected{% endif %}>IFSB</option>
+                    <option value="معايير محلية" {% if settings.sharia_source == 'معايير محلية' %}selected{% endif %}>معايير محلية</option>
+                </select>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                <button type="button" onclick="document.getElementById('shariaModal').style.display='none'" style="padding:10px 15px; background:#F8F5EC; border:1px solid #E1D8C6; border-radius:8px; cursor:pointer;">إلغاء</button>
+                <button type="submit" style="padding:10px 15px; background:#063B2E; color:white; border:none; border-radius:8px; cursor:pointer;">تحديث المعايير</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function scrollToSec(id, btn) {
+    document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    const el = document.getElementById(id);
+    if(el) {
+        el.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+}
+</script>
+{% endblock %}

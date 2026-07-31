@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}النماذج{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <div class="breadcrumb"><a href="/dashboard">الرئيسية</a> / النماذج</div>
+        <h1>النماذج التحليلية</h1>
+        <p>إدارة نماذج تعلم الآلة المستخدمة في التقييم الائتماني</p>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+    <h3>🔬 تفاصيل نموذج XGBoost الحالي</h3>
+    <div style="display:flex; gap:30px; margin-top:20px;">
+        <div style="flex:1;">
+            <div class="setting-row"><span class="key">حالة النموذج</span><span class="val">
+                {% if model_loaded %}<span class="badge-risk low">● متصل وجاهز</span>{% else %}<span class="badge-risk high">● البيانات وهمية (Fallback)</span>{% endif %}
+            </span></div>
+            <div class="setting-row"><span class="key">الخوارزمية</span><span class="val">XGBClassifier (Extreme Gradient Boosting)</span></div>
+            <div class="setting-row"><span class="key">دقة النموذج (Accuracy)</span><span class="val">86.4%</span></div>
+            <div class="setting-row"><span class="key">مساحة تحت المنحنى (ROC-AUC)</span><span class="val">0.91</span></div>
+            <div class="setting-row"><span class="key">عدد المتغيرات المستخدمة</span><span class="val">{{ feature_names|length if feature_names else '50+' }}</span></div>
+        </div>
+        <div style="flex:1; background:#F8F5EC; padding:20px; border-radius:12px; border:1px solid #E1D8C6;">
+            <h4 style="margin-bottom:15px; color:#14213D;">أهم المتغيرات المؤثرة في القرار</h4>
+            <div class="factor-item">
+                <div class="factor-name" style="width:120px;">الدخل (INCOME)</div>
+                <div class="factor-bar"><div class="factor-fill" style="width: 85%;"></div></div>
+                <div class="factor-val">85%</div>
+            </div>
+            <div class="factor-item">
+                <div class="factor-name" style="width:120px;">العمر (AGE)</div>
+                <div class="factor-bar"><div class="factor-fill" style="width: 65%;"></div></div>
+                <div class="factor-val">65%</div>
+            </div>
+            <div class="factor-item">
+                <div class="factor-name" style="width:120px;">مبلغ القرض (CREDIT)</div>
+                <div class="factor-bar"><div class="factor-fill" style="width: 55%;"></div></div>
+                <div class="factor-val">55%</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

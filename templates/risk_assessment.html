@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}تقييم المخاطر{% endblock %}
+{% block content %}
+<div class="topbar">
+    <div>
+        <div class="breadcrumb"><a href="/dashboard">الرئيسية</a> / <a href="/clients">العملاء</a> / تقييم المخاطر</div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <h1>تقييم المخاطر</h1>
+            <select id="clientSelector" onchange="window.location.href='/risk_assessment/' + this.value" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #E5E7EB; font-family: 'Tajawal', sans-serif; font-size: 14px; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                {% for c in clients_list %}
+                <option value="{{ c.id }}" {% if c.id == client.id %}selected{% endif %}>{{ c.name }} ({{ c.id }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <p>تحليل احتمالية التعثر ومقارنة القرار بين التمويل التقليدي و التشاركي</p>
+    </div>
+    <button class="btn-refresh" onclick="window.location.reload()">🔄 إعادة التقييم</button>
+</div>
+
+<div class="client-info">
+    <h3>معلومات العميل</h3>
+    <div class="info-grid">
+        <div class="info-item"><div class="label">معرف العميل</div><div class="value">{{ client.id }}</div></div>
+        <div class="info-item"><div class="label">العمر</div><div class="value">{{ client.age }} سنة</div></div>
+        <div class="info-item"><div class="label">الدخل</div><div class="value">{{ "{:,.0f}".format(client.income) }} درهم</div></div>
+        <div class="info-item"><div class="label">مبلغ التمويل المطلوب</div><div class="value">{{ "{:,.0f}".format(client.loan_amount) }} درهم</div></div>
+        <div class="info-item"><div class="label">الحالة المهنية</div><div class="value">{{ client.job }}</div></div>
+        <div class="info-item"><div class="label">تاريخ التسجيل</div><div class="value">{{ client.date }}</div></div>
+    </div>
+</div>
+
+<div class="risk-result">
+    <div style="display:flex; justify-content:space-around; align-items:center;">
+        <div>
+            <div style="color:#6B7280;font-size:13px;margin-bottom:5px;">احتمال التعثر</div>
+            <div class="risk-prob" style="color: {% if risk_level == 'منخفض' %}#0F7A4F{% elif risk_level == 'متوسط' %}#C76A00{% else %}#A83232{% endif %};">{{ "%.1f"|format(prob * 100) }}%</div>
+            <div style="color:#6B7280;font-size:12px;">({{ "%.3f"|format(prob) }})</div>
+        </div>
+        <div style="width: 250px;">
+            <div style="color:#6B7280;font-size:13px;margin-bottom:5px;">مستوى الخطر</div>
+            <div class="risk-label" style="color: {% if risk_level == 'منخفض' %}#0F7A4F{% elif risk_level == 'متوسط' %}#C76A00{% else %}#A83232{% endif %};">{{ risk_level }}</div>
+            <div class="risk-bar-container"><div class="risk-bar-fill" style="width: {{ "%.1f"|format(prob * 100) }}%; background: {% if risk_level == 'منخفض' %}#0F7A4F{% elif risk_level == 'متوسط' %}#C76A00{% else %}#A83232{% endif %};"></div></div>
+        </div>
+        <div>
+            <div style="color:#6B7280;font-size:13px;margin-bottom:5px;">النموذج المستخدم</div>
+            <div style="font-size:18px;font-weight:600;color:#14213D;">XGBoost</div>
+            <div style="font-size:24px;">📊</div>
+        </div>
+    </div>
+</div>
+
+<div class="two-cards">
+    <div class="finance-card trad">
+        <div class="card-title">🏦 التمويل التقليدي</div>
+        <div class="card-row"><span class="key">احتمال التعثر</span><span class="val">{{ "%.1f"|format(prob * 100) }}% ({{ "%.3f"|format(prob) }})</span></div>
+        <div class="card-row"><span class="key">مستوى الخطر</span><span class="val" style="color:{% if risk_level == 'منخفض' %}#0F7A4F{% elif risk_level == 'متوسط' %}#C76A00{% else %}#A83232{% endif %}">{{ risk_level }}</span></div>
+        <div class="card-row"><span class="key">القرار الائتماني</span><span class="val">
+            <span class="decision-badge {% if risk_level == 'منخفض' %}green{% elif risk_level == 'متوسط' %}orange{% else %}red{% endif %}">{{ conv_decision.decision }}</span>
+        </span></div>
+        
+        <div class="recommendations" style="margin-top:20px;">
+            <h4>التوصيات التقليدية</h4>
+            <div class="rec-item" style="color: #6B7280; font-size: 13px;">{{ conv_decision.recommendation }}</div>
+        </div>
+    </div>
+
+    <div class="finance-card part">
+        <div class="card-title">🤝 التمويل التشاركي</div>
+        <div class="card-row"><span class="key">احتمال التعثر</span><span class="val">{{ "%.1f"|format(prob * 100) }}% ({{ "%.3f"|format(prob) }})</span></div>
+        <div class="card-row"><span class="key">مستوى الخطر</span><span class="val" style="color:{% if risk_level == 'منخفض' %}#0F7A4F{% elif risk_level == 'متوسط' %}#C76A00{% else %}#A83232{% endif %}">{{ risk_level }}</span></div>
+        <div class="card-row"><span class="key">القرار المبدئي</span><span class="val">
+            <span class="decision-badge {% if risk_level == 'منخفض' %}green{% elif risk_level == 'متوسط' %}orange{% else %}red{% endif %}">{{ part_decision.decision }}</span>
+        </span></div>
+        <div class="card-row"><span class="key">الصيغة المقترحة</span><span class="val"><span class="contract-badge {% if part_decision.contract == 'غير مقترح' %}grey{% endif %}">{{ part_decision.contract }}</span></span></div>
+        
+        <div class="recommendations" style="margin-top:20px;">
+            <h4>التوصيات والضوابط</h4>
+            <div class="rec-item" style="color: #6B7280; font-size: 13px;">{{ part_decision.recommendation }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="summary-card">
+    <h3>⚖️ ملخص المقارنة</h3>
+    <div class="summary-compare">
+        <div class="summary-box trad">
+            <div class="title">القرار في التمويل التقليدي</div>
+            <div class="result">{{ conv_decision.decision }}</div>
+        </div>
+        <div class="vs">VS</div>
+        <div class="summary-box part">
+            <div class="title">القرار في التمويل التشاركي</div>
+            <div class="result">{{ part_decision.contract }}</div>
+        </div>
+    </div>
+    <div class="summary-text">
+        تم استخدام درجة الخطر ({{ "%.1f"|format(prob * 100) }}%) في النظامين. في التمويل التقليدي، يعتمد القرار على الجدارة الائتمانية. في التمويل التشاركي، يتم دمج درجة الخطر مع الضوابط لاختيار صيغة التمويل المناسبة.
+    </div>
+</div>
+{% endblock %}

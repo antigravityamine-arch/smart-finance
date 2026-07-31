@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}الرئيسية{% endblock %} - منصة إدارة المخاطر</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="mobile-header">
+        <div class="menu-btn" onclick="toggleSidebar()">☰</div>
+        <div class="mobile-logo">إدارة المخاطر</div>
+    </div>
+    <div class="overlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="logo-area">
+            <div class="icon">🏛</div>
+            <h2>منصة إدارة مخاطر<br>التمويل الذكية</h2>
+            <p>تمويل تقليدي و تشاركي</p>
+        </div>
+        <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}"><span>🏠</span> الرئيسية</a>
+        <a href="{{ url_for('clients') }}" class="nav-item {% if request.endpoint == 'clients' %}active{% endif %}"><span>👤</span> العملاء</a>
+        <a href="{{ url_for('risk_assessment') }}" class="nav-item {% if request.endpoint == 'risk_assessment' %}active{% endif %}"><span>📊</span> تقييم المخاطر</a>
+        <a href="{{ url_for('models') }}" class="nav-item {% if request.endpoint == 'models' %}active{% endif %}"><span>🔬</span> النماذج</a>
+        <a href="{{ url_for('reports') }}" class="nav-item {% if request.endpoint == 'reports' %}active{% endif %}"><span>📄</span> التقارير</a>
+        <a href="{{ url_for('sharia_compliance') }}" class="nav-item {% if request.endpoint == 'sharia_compliance' %}active{% endif %}"><span>🛡</span> الامتثال الشرعي</a>
+        <a href="{{ url_for('historical_search') }}" class="nav-item {% if request.endpoint == 'historical_search' %}active{% endif %}"><span>🔍</span> البحث التاريخي</a>
+        <a href="{{ url_for('analytics') }}" class="nav-item {% if request.endpoint == 'analytics' %}active{% endif %}"><span>📈</span> الإحصائيات المتقدمة</a>
+        <a href="{{ url_for('settings') }}" class="nav-item {% if request.endpoint == 'settings' %}active{% endif %}"><span>⚙️</span> الإعدادات</a>
+        <div class="logout">
+            <a href="{{ url_for('logout') }}"><span>🚪</span> تسجيل الخروج</a>
+        </div>
+    </div>
+
+    <div class="main">
+        {% block content %}{% endblock %}
+        <div class="footer">منصة إدارة مخاطر التمويل الذكية © 2025</div>
+    </div>
+    <script>
+        function toggleSidebar() {
+            document.body.classList.toggle('show-sidebar');
+        }
+    </script>
+</body>
+</html>

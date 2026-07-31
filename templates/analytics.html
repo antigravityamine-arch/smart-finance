@@ -1,0 +1,444 @@
+{% extends 'base.html' %}
+{% block title %}الإحصائيات المتقدمة{% endblock %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+    .analytics-hero {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        border-radius: 16px;
+        padding: 30px;
+        margin-bottom: 25px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    .analytics-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(184,137,23,0.15) 0%, transparent 70%);
+    }
+    .analytics-hero h2 { font-size: 22px; margin-bottom: 6px; position: relative; z-index: 1; }
+    .analytics-hero p { color: #B88917; font-size: 14px; position: relative; z-index: 1; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+    .kpi-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #E1D8C6;
+        text-align: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+    .kpi-card .kpi-icon { font-size: 28px; margin-bottom: 8px; }
+    .kpi-card .kpi-value { font-size: 28px; font-weight: 800; color: #14213D; }
+    .kpi-card .kpi-label { font-size: 12px; color: #6B7280; margin-top: 4px; }
+    .kpi-card.highlight { background: linear-gradient(135deg, #063B2E, #0F5C45); }
+    .kpi-card.highlight .kpi-value { color: #B88917; }
+    .kpi-card.highlight .kpi-label { color: rgba(255,255,255,0.7); }
+    .kpi-card.danger { border-color: #FCA5A5; }
+    .kpi-card.danger .kpi-value { color: #DC2626; }
+
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+    .chart-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        border: 1px solid #E1D8C6;
+    }
+    .chart-card h3 {
+        font-size: 15px;
+        color: #14213D;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #E1D8C6;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .chart-card canvas { max-height: 300px; }
+
+    .chart-card.full-width { grid-column: 1 / -1; }
+
+    .stats-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    .stats-table th {
+        background: #F8F5EC;
+        padding: 10px 14px;
+        text-align: right;
+        font-size: 12px;
+        color: #6B7280;
+        border-bottom: 1px solid #E1D8C6;
+    }
+    .stats-table td {
+        padding: 10px 14px;
+        text-align: right;
+        font-size: 13px;
+        color: #14213D;
+        border-bottom: 1px solid #F0EBE0;
+    }
+    .stats-table tr:hover { background: #FAFAF7; }
+
+    .no-data-box {
+        text-align: center;
+        padding: 60px 30px;
+        color: #6B7280;
+    }
+    .no-data-box .icon { font-size: 60px; margin-bottom: 15px; }
+    .no-data-box h3 { color: #14213D; margin-bottom: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <h1>📈 الإحصائيات المتقدمة</h1>
+        <p>تحليل شامل لقاعدة البيانات التاريخية</p>
+    </div>
+    <div class="info">
+        <span>👤 مسؤول المخاطر</span>
+    </div>
+</div>
+
+{% if not data_loaded %}
+<div class="no-data-box">
+    <div class="icon">📂</div>
+    <h3>ملف البيانات غير متوفر</h3>
+    <p>لم يتم العثور على ملف raw_data.csv. يرجى التأكد من وجوده في مجلد التطبيق.</p>
+</div>
+{% else %}
+
+<div class="analytics-hero">
+    <h2>📊 لوحة التحليلات المتقدمة</h2>
+    <p>تحليل {{ "{:,}".format(stats.total_rows) }} سجل عميل | {{ stats.total_columns }} حقل بيانات</p>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+    <div class="kpi-card highlight">
+        <div class="kpi-icon">👥</div>
+        <div class="kpi-value">{{ "{:,}".format(stats.total_rows) }}</div>
+        <div class="kpi-label">إجمالي السجلات</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon">✅</div>
+        <div class="kpi-value">{{ "{:,}".format(stats.non_defaulted) }}</div>
+        <div class="kpi-label">غير متعثرين</div>
+    </div>
+    <div class="kpi-card danger">
+        <div class="kpi-icon">⚠️</div>
+        <div class="kpi-value">{{ "{:,}".format(stats.defaulted) }}</div>
+        <div class="kpi-label">متعثرين</div>
+    </div>
+    <div class="kpi-card danger">
+        <div class="kpi-icon">📉</div>
+        <div class="kpi-value">{{ stats.default_rate }}%</div>
+        <div class="kpi-label">معدل التعثر العام</div>
+    </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="charts-grid">
+    <!-- توزيع التعثر -->
+    <div class="chart-card">
+        <h3>🎯 توزيع التعثر</h3>
+        <canvas id="defaultChart"></canvas>
+        <table class="stats-table">
+            <tr><th>الحالة</th><th>العدد</th></tr>
+            <tr><td>غير متعثر</td><td>{{ "{:,}".format(stats.non_defaulted) }}</td></tr>
+            <tr><td>متعثر</td><td>{{ "{:,}".format(stats.defaulted) }}</td></tr>
+        </table>
+    </div>
+
+    <!-- توزيع الجنس -->
+    <div class="chart-card">
+        <h3>👤 توزيع الجنس</h3>
+        <canvas id="genderChart"></canvas>
+        {% if stats.gender_dist %}
+        <table class="stats-table">
+            <tr><th>الجنس</th><th>العدد</th></tr>
+            {% for key, val in stats.gender_dist.items() %}
+            <tr><td>{{ key }}</td><td>{{ "{:,}".format(val) }}</td></tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+    </div>
+
+    <!-- معدل التعثر حسب الجنس -->
+    <div class="chart-card">
+        <h3>📊 معدل التعثر حسب الجنس</h3>
+        <canvas id="defaultByGenderChart"></canvas>
+        {% if stats.default_by_gender %}
+        <table class="stats-table">
+            <tr><th>الجنس</th><th>معدل التعثر</th></tr>
+            {% for key, val in stats.default_by_gender.items() %}
+            <tr><td>{{ key }}</td><td>{{ val }}%</td></tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+    </div>
+
+    <!-- توزيع نوع العقد -->
+    <div class="chart-card">
+        <h3>📃 توزيع نوع العقد</h3>
+        <canvas id="contractChart"></canvas>
+        {% if stats.contract_dist %}
+        <table class="stats-table">
+            <tr><th>نوع العقد</th><th>العدد</th></tr>
+            {% for key, val in stats.contract_dist.items() %}
+            <tr><td>{{ key }}</td><td>{{ "{:,}".format(val) }}</td></tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+    </div>
+
+    <!-- توزيع العمر -->
+    <div class="chart-card">
+        <h3>🎂 توزيع الأعمار</h3>
+        <canvas id="ageChart"></canvas>
+        {% if stats.age_distribution %}
+        <table class="stats-table">
+            <tr><th>الفئة العمرية</th><th>العدد</th></tr>
+            {% for item in stats.age_distribution %}
+            <tr><td>{{ item.range }}</td><td>{{ "{:,}".format(item.count) }}</td></tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+    </div>
+
+    <!-- معدل التعثر حسب التعليم -->
+    <div class="chart-card">
+        <h3>🎓 معدل التعثر حسب التعليم</h3>
+        <canvas id="educationChart"></canvas>
+        {% if stats.default_by_education %}
+        <table class="stats-table">
+            <tr><th>مستوى التعليم</th><th>معدل التعثر</th></tr>
+            {% for key, val in stats.default_by_education.items() %}
+            <tr><td>{{ key }}</td><td>{{ val }}%</td></tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+    </div>
+</div>
+
+<!-- جداول الإحصائيات -->
+<div class="charts-grid">
+    <!-- إحصائيات الدخل -->
+    <div class="chart-card">
+        <h3>💰 إحصائيات الدخل</h3>
+        {% if stats.income_stats %}
+        <table class="stats-table">
+            <tr><th>المقياس</th><th>القيمة</th></tr>
+            <tr><td>المتوسط</td><td>{{ "{:,.0f}".format(stats.income_stats.mean) }}</td></tr>
+            <tr><td>الوسيط</td><td>{{ "{:,.0f}".format(stats.income_stats.median) }}</td></tr>
+            <tr><td>الحد الأدنى</td><td>{{ "{:,.0f}".format(stats.income_stats.min) }}</td></tr>
+            <tr><td>الحد الأقصى</td><td>{{ "{:,.0f}".format(stats.income_stats.max) }}</td></tr>
+        </table>
+        {% endif %}
+    </div>
+
+    <!-- إحصائيات القروض -->
+    <div class="chart-card">
+        <h3>🏦 إحصائيات مبالغ القروض</h3>
+        {% if stats.credit_stats %}
+        <table class="stats-table">
+            <tr><th>المقياس</th><th>القيمة</th></tr>
+            <tr><td>المتوسط</td><td>{{ "{:,.0f}".format(stats.credit_stats.mean) }}</td></tr>
+            <tr><td>الوسيط</td><td>{{ "{:,.0f}".format(stats.credit_stats.median) }}</td></tr>
+            <tr><td>الحد الأدنى</td><td>{{ "{:,.0f}".format(stats.credit_stats.min) }}</td></tr>
+            <tr><td>الحد الأقصى</td><td>{{ "{:,.0f}".format(stats.credit_stats.max) }}</td></tr>
+        </table>
+        {% endif %}
+    </div>
+
+    <!-- الحالة العائلية -->
+    <div class="chart-card">
+        <h3>👨‍👩‍👧‍👦 توزيع الحالة العائلية</h3>
+        {% if stats.family_dist %}
+        <table class="stats-table">
+            <tr><th>الحالة</th><th>العدد</th></tr>
+            {% for key, val in stats.family_dist.items() %}
+            <tr><td>{{ key }}</td><td>{{ "{:,}".format(val) }}</td></tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+    </div>
+
+    <!-- نوع الدخل -->
+    <div class="chart-card">
+        <h3>💼 توزيع نوع الدخل</h3>
+        {% if stats.income_type_dist %}
+        <table class="stats-table">
+            <tr><th>النوع</th><th>العدد</th></tr>
+            {% for key, val in stats.income_type_dist.items() %}
+            <tr><td>{{ key }}</td><td>{{ "{:,}".format(val) }}</td></tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// ألوان متناسقة
+const colors = {
+    primary: '#063B2E',
+    secondary: '#B88917',
+    green: '#0F7A4F',
+    red: '#DC2626',
+    orange: '#F59E0B',
+    blue: '#3B82F6',
+    purple: '#8B5CF6',
+    pink: '#EC4899',
+    teal: '#14B8A6',
+    indigo: '#6366F1',
+};
+const palette = ['#063B2E', '#B88917', '#0F7A4F', '#3B82F6', '#8B5CF6', '#EC4899', '#14B8A6', '#F59E0B', '#DC2626', '#6366F1'];
+
+Chart.defaults.font.family = "'Segoe UI', Tahoma, sans-serif";
+Chart.defaults.font.size = 12;
+
+// 1. توزيع التعثر
+new Chart(document.getElementById('defaultChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['غير متعثر', 'متعثر'],
+        datasets: [{
+            data: [{{ stats.non_defaulted }}, {{ stats.defaulted }}],
+            backgroundColor: [colors.green, colors.red],
+            borderWidth: 0,
+            hoverOffset: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom', labels: { padding: 15 } }
+        }
+    }
+});
+
+// 2. توزيع الجنس
+{% if stats.gender_dist %}
+new Chart(document.getElementById('genderChart'), {
+    type: 'doughnut',
+    data: {
+        labels: {{ stats.gender_dist.keys()|list|tojson }},
+        datasets: [{
+            data: {{ stats.gender_dist.values()|list|tojson }},
+            backgroundColor: [colors.blue, colors.pink, colors.purple],
+            borderWidth: 0,
+            hoverOffset: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom', labels: { padding: 15 } }
+        }
+    }
+});
+{% endif %}
+
+// 3. معدل التعثر حسب الجنس
+{% if stats.default_by_gender %}
+new Chart(document.getElementById('defaultByGenderChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ stats.default_by_gender.keys()|list|tojson }},
+        datasets: [{
+            label: 'معدل التعثر %',
+            data: {{ stats.default_by_gender.values()|list|tojson }},
+            backgroundColor: [colors.blue, colors.pink, colors.purple],
+            borderRadius: 8,
+            barThickness: 50,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, ticks: { callback: v => v + '%' } }
+        }
+    }
+});
+{% endif %}
+
+// 4. توزيع نوع العقد
+{% if stats.contract_dist %}
+new Chart(document.getElementById('contractChart'), {
+    type: 'doughnut',
+    data: {
+        labels: {{ stats.contract_dist.keys()|list|tojson }},
+        datasets: [{
+            data: {{ stats.contract_dist.values()|list|tojson }},
+            backgroundColor: [colors.primary, colors.secondary, colors.teal],
+            borderWidth: 0,
+            hoverOffset: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom', labels: { padding: 15 } }
+        }
+    }
+});
+{% endif %}
+
+// 5. توزيع الأعمار
+{% if stats.age_distribution %}
+new Chart(document.getElementById('ageChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ stats.age_distribution|map(attribute='range')|list|tojson }},
+        datasets: [{
+            label: 'عدد العملاء',
+            data: {{ stats.age_distribution|map(attribute='count')|list|tojson }},
+            backgroundColor: palette.slice(0, {{ stats.age_distribution|length }}),
+            borderRadius: 6,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true },
+            x: { grid: { display: false } }
+        }
+    }
+});
+{% endif %}
+
+// 6. معدل التعثر حسب التعليم
+{% if stats.default_by_education %}
+new Chart(document.getElementById('educationChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ stats.default_by_education.keys()|list|tojson }},
+        datasets: [{
+            label: 'معدل التعثر %',
+            data: {{ stats.default_by_education.values()|list|tojson }},
+            backgroundColor: palette,
+            borderRadius: 6,
+        }]
+    },
+    options: {
+        responsive: true,
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { beginAtZero: true, ticks: { callback: v => v + '%' } }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endif %}
+{% endblock %}

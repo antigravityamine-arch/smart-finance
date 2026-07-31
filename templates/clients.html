@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% block title %}العملاء{% endblock %}
+{% block head %}
+<style>
+    .flash-msg {
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: fadeIn 0.3s ease;
+    }
+    .flash-msg.success { background: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
+    .flash-msg.error { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .action-btns { display: flex; gap: 6px; align-items: center; }
+    .btn-edit-sm { padding: 6px 10px; background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; border-radius: 6px; font-size: 12px; cursor: pointer; text-decoration: none; white-space: nowrap; transition: all 0.2s; }
+    .btn-edit-sm:hover { background: #FDE68A; }
+    .btn-delete-sm { padding: 6px 10px; background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+    .btn-delete-sm:hover { background: #FECACA; }
+    .confirm-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }
+    .confirm-box { background: white; padding: 30px; border-radius: 12px; width: 380px; max-width: 90%; text-align: center; }
+    .confirm-box h3 { color: #991B1B; margin-bottom: 10px; }
+    .confirm-box p { color: #6B7280; font-size: 14px; margin-bottom: 20px; }
+    .confirm-box .btns { display: flex; gap: 10px; justify-content: center; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="topbar">
+    <div>
+        <h1>العملاء</h1>
+        <p>إدارة بيانات العملاء واختبار عميل لتقييم المخاطر</p>
+    </div>
+    <div class="info">
+        <span>📅 {{ date }}</span>
+        <span>🔔</span>
+        <span>👤 مسؤول المخاطر</span>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+    {% for category, message in messages %}
+    <div class="flash-msg {{ category }}">
+        {% if category == 'success' %}✅{% else %}⚠️{% endif %} {{ message }}
+    </div>
+    {% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="stats">
+    <div class="stat-card total">
+        <div class="left">
+            <div class="label">إجمالي العملاء</div>
+            <div class="value">{{ stats.total }}</div>
+            <div class="sub">إجمالي قاعدة البيانات</div>
+        </div>
+        <div class="icon">👥</div>
+    </div>
+    <div class="stat-card green">
+        <div class="left">
+            <div class="label">منخفض الخطر</div>
+            <div class="value">{{ stats.low }}</div>
+            <div class="sub">{{ stats.low_pct }}% من الإجمالي</div>
+        </div>
+        <div class="icon">✅</div>
+    </div>
+    <div class="stat-card orange">
+        <div class="left">
+            <div class="label">متوسط الخطر</div>
+            <div class="value">{{ stats.mid }}</div>
+            <div class="sub">{{ stats.mid_pct }}% من الإجمالي</div>
+        </div>
+        <div class="icon">⚠️</div>
+    </div>
+    <div class="stat-card red">
+        <div class="left">
+            <div class="label">مرتفع الخطر</div>
+            <div class="value">{{ stats.high }}</div>
+            <div class="sub">{{ stats.high_pct }}% من الإجمالي</div>
+        </div>
+        <div class="icon">🚨</div>
+    </div>
+</div>
+
+<form method="GET" action="{{ url_for('clients') }}" class="filters">
+    <button type="button" class="btn-add" onclick="document.getElementById('addModal').style.display='flex'">+ إضافة عميل</button>
+    <div class="search-box">
+        <span>🔍</span>
+        <input type="text" name="search" placeholder="بحث عن عميل..." value="{{ search }}">
+    </div>
+    <select class="filter-select" name="risk">
+        <option value="الكل" {% if risk == 'الكل' %}selected{% endif %}>مستوى الخطر - الكل</option>
+        <option value="منخفض" {% if risk == 'منخفض' %}selected{% endif %}>منخفض</option>
+        <option value="متوسط" {% if risk == 'متوسط' %}selected{% endif %}>متوسط</option>
+        <option value="مرتفع" {% if risk == 'مرتفع' %}selected{% endif %}>مرتفع</option>
+    </select>
+    <select class="filter-select" name="type">
+        <option value="الكل" {% if type == 'الكل' %}selected{% endif %}>نوع التمويل - الكل</option>
+        <option value="تقليدي" {% if type == 'تقليدي' %}selected{% endif %}>تقليدي</option>
+        <option value="تشاركي" {% if type == 'تشاركي' %}selected{% endif %}>تشاركي</option>
+    </select>
+    <button type="submit" class="btn-assess" style="padding: 10px 15px; border-radius: 8px;">فلترة</button>
+</form>
+
+<div class="table-card">
+    <table>
+        <thead>
+            <tr>
+                <th>معرف العميل</th>
+                <th>اسم العميل</th>
+                <th>العمر</th>
+                <th>الدخل الشهري</th>
+                <th>مبلغ التمويل المطلوب</th>
+                <th>الحالة المهنية</th>
+                <th>مستوى الخطر</th>
+                <th>نوع التمويل</th>
+                <th>تاريخ التسجيل</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+            <tr>
+                <td>{{ client.id }}</td>
+                <td>{{ client.name }}</td>
+                <td>{{ client.age }}</td>
+                <td>{{ "{:,.0f}".format(client.income) }} درهم</td>
+                <td>{{ "{:,.0f}".format(client.loan_amount) }} درهم</td>
+                <td>{{ client.job }}</td>
+                <td>
+                    {% if client.risk_level == 'منخفض' %}
+                        <span class="badge-risk low">● منخفض</span>
+                    {% elif client.risk_level == 'متوسط' %}
+                        <span class="badge-risk mid">● متوسط</span>
+                    {% else %}
+                        <span class="badge-risk high">● مرتفع</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if client.finance_type == 'تشاركي' %}
+                        <span class="badge-type part">تشاركي</span>
+                    {% else %}
+                        <span class="badge-type trad">تقليدي</span>
+                    {% endif %}
+                </td>
+                <td>{{ client.date }}</td>
+                <td>
+                    <div class="action-btns">
+                        <a class="btn-assess" href="{{ url_for('risk_assessment_client', client_id=client.id) }}" title="تقييم المخاطر">🔍</a>
+                        <a class="btn-edit-sm" href="{{ url_for('edit_client_route', client_id=client.id) }}" title="تعديل">✏️</a>
+                        <button class="btn-delete-sm" onclick="confirmDelete('{{ client.id }}')" title="حذف">🗑️</button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="pagination">
+        <div class="page-info">الصفحة {{ current_page }} من {{ total_pages }} (إجمالي {{ stats.total }})</div>
+        <div class="pages">
+            {% if current_page > 1 %}
+            <a href="{{ url_for('clients', page=current_page-1, search=search, risk=risk, type=type) }}" class="page-btn" style="text-decoration:none; color:inherit;">السابق</a>
+            {% endif %}
+            
+            {% for p in range(1, total_pages + 1) %}
+            <a href="{{ url_for('clients', page=p, search=search, risk=risk, type=type) }}" class="page-btn {% if p == current_page %}active{% endif %}" style="text-decoration:none; color:inherit;">{{ p }}</a>
+            {% endfor %}
+            
+            {% if current_page < total_pages %}
+            <a href="{{ url_for('clients', page=current_page+1, search=search, risk=risk, type=type) }}" class="page-btn" style="text-decoration:none; color:inherit;">التالي</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal إضافة عميل -->
+<div id="addModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:white; padding:30px; border-radius:12px; width:400px; max-width:90%;">
+        <h3 style="margin-bottom:20px; color:#14213D;">إضافة عميل جديد</h3>
+        <form method="POST" action="{{ url_for('add_client') }}" style="display:flex; flex-direction:column; gap:15px;">
+            <div style="margin-bottom:15px;">
+                <label style="display:block; margin-bottom:5px; color:#5D4037;">اسم العميل</label>
+                <input type="text" name="name" required style="width:100%; padding:10px; border:1px solid #E1D8C6; border-radius:8px;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="display:block; margin-bottom:5px; color:#5D4037;">العمر</label>
+                <input type="number" name="age" required min="18" max="99" style="width:100%; padding:10px; border:1px solid #E1D8C6; border-radius:8px;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="display:block; margin-bottom:5px; color:#5D4037;">الدخل الشهري (درهم)</label>
+                <input type="number" name="income" required min="0" style="width:100%; padding:10px; border:1px solid #E1D8C6; border-radius:8px;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="display:block; margin-bottom:5px; color:#5D4037;">مبلغ التمويل (درهم)</label>
+                <input type="number" name="loan_amount" required min="0" style="width:100%; padding:10px; border:1px solid #E1D8C6; border-radius:8px;">
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-size:13px; color:#6B7280;">الحالة المهنية</label>
+                <select name="job" style="width:100%; padding:10px; border:1px solid #E1D8C6; border-radius:8px;">
+                    <option value="موظف">موظف</option>
+                    <option value="تاجر">تاجر</option>
+                    <option value="مدير">مدير</option>
+                    <option value="طالب">طالب</option>
+                </select>
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-size:13px; color:#6B7280;">نوع التمويل</label>
+                <select name="finance_type" style="width:100%; padding:10px; border:1px solid #E1D8C6; border-radius:8px;">
+                    <option value="تقليدي">تقليدي</option>
+                    <option value="تشاركي">تشاركي</option>
+                </select>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                <button type="button" onclick="document.getElementById('addModal').style.display='none'" style="padding:10px 15px; background:#F8F5EC; border:1px solid #E1D8C6; border-radius:8px; cursor:pointer;">إلغاء</button>
+                <button type="submit" style="padding:10px 15px; background:#063B2E; color:white; border:none; border-radius:8px; cursor:pointer;">حفظ العميل</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- نافذة تأكيد الحذف -->
+<div class="confirm-overlay" id="deleteConfirm">
+    <div class="confirm-box">
+        <h3>🗑️ تأكيد الحذف</h3>
+        <p>هل أنت متأكد من حذف العميل <strong id="deleteClientId"></strong>؟<br>لا يمكن التراجع عن هذا الإجراء.</p>
+        <div class="btns">
+            <button onclick="document.getElementById('deleteConfirm').style.display='none'" style="padding:10px 20px; background:#F8F5EC; border:1px solid #E1D8C6; border-radius:8px; cursor:pointer;">إلغاء</button>
+            <form id="deleteForm" method="POST" style="display:inline;">
+                <button type="submit" style="padding:10px 20px; background:#DC2626; color:white; border:none; border-radius:8px; cursor:pointer;">حذف نهائي</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(clientId) {
+    document.getElementById('deleteClientId').textContent = clientId;
+    document.getElementById('deleteForm').action = '/clients/delete/' + clientId;
+    document.getElementById('deleteConfirm').style.display = 'flex';
+}
+</script>
+{% endblock %}

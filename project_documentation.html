@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شرح وتوثيق منصة إدارة المخاطر</title>
+    <style>
+        :root {
+            --primary: #063B2E;
+            --secondary: #D1AE6C;
+            --bg: #F8F5EC;
+            --text: #14213D;
+            --light-text: #6B7280;
+            --border: #E1D8C6;
+            --white: #FFFFFF;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: var(--primary);
+            color: var(--white);
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 5px solid var(--secondary);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+        header p {
+            margin: 10px 0 0;
+            color: #A3B8B0;
+            font-size: 18px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        .section-card {
+            background-color: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+        h2 {
+            color: var(--primary);
+            border-bottom: 2px solid var(--secondary);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h3 {
+            color: #0F5C45;
+            margin-top: 25px;
+        }
+        ul {
+            padding-right: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        .highlight {
+            background-color: #FEEBC8;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #C76A00;
+        }
+        .code-box {
+            background-color: #1E1E1E;
+            color: #D4D4D4;
+            padding: 15px;
+            border-radius: 8px;
+            direction: ltr;
+            text-align: left;
+            font-family: Consolas, monospace;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #F3EFE6;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>📖 التوثيق الشامل لمنصة إدارة المخاطر</h1>
+    <p>دليل مبسط يشرح بنية المشروع، صفحاته، طريقة عمله، وكيفية حساب المخاطر</p>
+</header>
+
+<div class="container">
+
+    <!-- القسم الأول: كيف تم بناء المشروع -->
+    <div class="section-card">
+        <h2>1. كيف تم بناء المشروع؟ (البنية التحتية)</h2>
+        <p>المشروع مبني باستخدام بنية ويب متكاملة (Full-Stack) تعتمد على لغة <strong>Python</strong> وتحديداً إطار عمل يُدعى <strong>Flask</strong>.</p>
+        <ul>
+            <li><strong>الخادم (Backend):</strong> يتم إدارته بالكامل عبر ملف واحد رئيسي وهو <span class="highlight">app.py</span>. هذا الملف هو قلب المشروع؛ يستقبل الطلبات من المتصفح، يعالج البيانات، يحسب المخاطر، ثم يرسل الصفحات المناسبة للمستخدم.</li>
+            <li><strong>واجهة المستخدم (Frontend):</strong> تم تصميمها باستخدام HTML و CSS (بدون الاعتماد على مكتبات خارجية معقدة ليظل النظام سريعاً وسهل التعديل). تعتمد الواجهات على محرك قوالب يُسمى <strong>Jinja2</strong> والذي يسمح بدمج كود Python داخل صفحات HTML لعرض البيانات الديناميكية.</li>
+        </ul>
+    </div>
+
+    <!-- القسم الثاني: أين تخزن البيانات -->
+    <div class="section-card">
+        <h2>2. أين تُخزن الداتا (البيانات) في مشروعنا؟</h2>
+        <p>لتبسيط المشروع وجعله يعمل فوراً بدون تعقيدات تنصيب قواعد بيانات (مثل SQL أو MongoDB)، قمنا باعتماد نظام <strong>التخزين في الذاكرة الحية (In-Memory Storage)</strong> داخل ملف <code>app.py</code>.</p>
+        <ul>
+            <li><strong>بيانات العملاء (CLIENTS_DATA):</strong> عبارة عن قائمة (List) تحتوي على قواميس (Dictionaries) في بايثون، كل قاموس يمثل عميلاً بمعلوماته (الاسم، الدخل، مبلغ القرض...).</li>
+            <li><strong>الإعدادات العامة (GLOBAL_SETTINGS):</strong> تخزن مؤقتاً في متغير يحمل نفس الاسم وتتحدث فورياً عند الحفظ من صفحة الإعدادات.</li>
+            <li><strong>الجلسات (Sessions):</strong> تُخزن معلومات تسجيل الدخول (مثل كلمة المرور واسم المستخدم) داخل "ملفات تعريف الارتباط" (Cookies) في متصفح المستخدم ليتذكره النظام ويتيح له تصفح الصفحات.</li>
+        </ul>
+        <p><em>ملاحظة احترافية:</em> في المستقبل وعند تحويل المشروع لبيئة إنتاج ضخمة، يتم تبديل هذه المتغيرات (Lists) بربطها بقاعدة بيانات حقيقية مثل PostgreSQL دون التأثير على شكل واجهة المستخدم.</p>
+    </div>
+
+    <!-- القسم الثالث: صفحات الـ HTML ودور كل واحدة -->
+    <div class="section-card">
+        <h2>3. صفحات الـ HTML (القوالب - Templates) ودور كل منها</h2>
+        <p>تتواجد جميع صفحات المشروع داخل مجلد <code>templates</code>. تعمل هذه الصفحات بنظام <strong>"التوريث" (Inheritance)</strong>، بمعنى أن هناك صفحة أساسية تحتوي على القائمة الجانبية والشريط العلوي، وباقي الصفحات ترث منها لتجنب تكرار الكود.</p>
+        
+        <table>
+            <tr>
+                <th style="width: 30%;">اسم الملف</th>
+                <th>دوره في المنصة</th>
+            </tr>
+            <tr>
+                <td><strong>base.html</strong></td>
+                <td>هو الهيكل العظمي للمشروع. يحتوي على القائمة الجانبية الثابتة، واستدعاء ملفات الـ CSS والخطوط. جميع الصفحات الأخرى تندمج داخله.</td>
+            </tr>
+            <tr>
+                <td><strong>login.html</strong></td>
+                <td>صفحة تسجيل الدخول، وهي الصفحة الوحيدة المستقلة عن <code>base.html</code>. تستقبل اسم المستخدم وكلمة المرور وترسلها للسيرفر.</td>
+            </tr>
+            <tr>
+                <td><strong>dashboard.html</strong></td>
+                <td>لوحة القيادة الرئيسية. تعرض الإحصائيات العامة (عدد العملاء، مستوى المخاطر العام) بصيغة رسوم بيانية ومؤشرات مرئية سريعة.</td>
+            </tr>
+            <tr>
+                <td><strong>clients.html</strong></td>
+                <td>صفحة إدارة العملاء. تعرض جدول العملاء مع إمكانية البحث والفلترة. كما تحتوي على نافذة (Modal) لإضافة عميل جديد للنظام.</td>
+            </tr>
+            <tr>
+                <td><strong>risk_assessment.html</strong></td>
+                <td>أهم صفحة عمليات! تعرض تفاصيل العميل، وتتصل بنموذج الذكاء الاصطناعي لحساب درجة الخطر. وتعرض القرار المقترح بناءً على نسبة الخطر.</td>
+            </tr>
+            <tr>
+                <td><strong>sharia_compliance.html</strong></td>
+                <td>خاصة بالتمويل التشاركي (الإسلامي). تقوم بفحص العملية بناءً على معايير شرعية (وجود أصل، خلو من الغرر...) وتُصدر تقريراً نهائياً.</td>
+            </tr>
+            <tr>
+                <td><strong>settings.html</strong></td>
+                <td>صفحة الإعدادات الشاملة (عامة، نماذج، قواعد، معايير). استخدمنا فيها الجافاسكريبت لتقسيمها إلى تبويبات (Tabs) لسهولة التصفح وتعديل الخصائص.</td>
+            </tr>
+            <tr>
+                <td><strong>models.html / reports.html</strong></td>
+                <td>صفحات توضيحية لخصائص نموذج الذكاء الاصطناعي، واستعراض التقارير الإجمالية للعمليات.</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- القسم الرابع: كيف يحسب النظام الأمور والذكاء الاصطناعي -->
+    <div class="section-card">
+        <h2>4. كيف يتم التقييم؟ (نموذج الذكاء الاصطناعي وقواعد القرار)</h2>
+        <p>القلب النابض للمنصة هو كيفية حساب المخاطر للعملاء المتقدمين لطلب التمويل. تتم العملية عبر خطوتين:</p>
+
+        <h3>الخطوة الأولى: التوقع بواسطة نموذج (XGBoost)</h3>
+        <p>يوجد في مجلد <code>model</code> ملف بصيغة <code>.pkl</code>. هذا الملف هو عبارة عن <strong>"عقل صناعي" مُدرّب مُسبقاً</strong> على آلاف البيانات البنكية السابقة باستخدام خوارزمية تُدعى <strong>XGBoost</strong>.</p>
+        <ul>
+            <li>عند طلب التقييم، يأخذ <code>app.py</code> بيانات العميل (العمر، الدخل، مبلغ القرض، نوع التمويل...) ويقوم بتحويلها إلى أرقام.</li>
+            <li>يتم تغذية هذه الأرقام للنموذج (Model).</li>
+            <li>يقوم النموذج بعمليات حسابية معقدة بناءً على خبرته السابقة، ويُصدر رقم احتمالي (Probability) بين 0 و 1 (مثلاً 0.12). هذا الرقم يعبر عن <strong>احتمالية تعثر العميل في السداد</strong>.</li>
+            <li><em>في حال عدم العثور على النموذج (Fallback):</em> قمنا ببرمجة النظام ليقوم بعملية حسابية بسيطة بديلة لضمان عدم توقف المنصة (مثلاً: إذا كان القرض أكبر بكثير من الدخل، يزيد الخطر).</li>
+        </ul>
+
+        <h3>الخطوة الثانية: تطبيق "قواعد القرار" (Business Rules)</h3>
+        <p>بعد الحصول على نسبة التعثر (مثال: 12%)، يقوم النظام بتصنيفها وتحويلها لقرار بناءً على قواعد قمنا ببرمجتها:</p>
+        <div class="code-box">
+إذا كانت الاحتمالية أقل من 15٪:
+    => الخطر: منخفض (Low Risk)
+    => القرار التقليدي: مقبول بدون شروط
+    => القرار التشاركي: مرابحة / مشاركة
+
+إذا كانت الاحتمالية بين 15٪ و 40٪:
+    => الخطر: متوسط (Medium Risk)
+    => القرار: مقبول مع ضمانات إضافية أو دفعة أولى أكبر
+
+إذا كانت الاحتمالية أعلى من 40٪:
+    => الخطر: مرتفع (High Risk)
+    => القرار: مرفوض تماماً
+        </div>
+    </div>
+
+    <!-- القسم الخامس: الامتثال الشرعي -->
+    <div class="section-card">
+        <h2>5. كيف يعمل فحص "الامتثال الشرعي"؟</h2>
+        <p>عندما يكون التمويل المختار للعميل هو تمويل "تشاركي"، يتم تفعيل قسم الامتثال الشرعي. النظام يقوم بتشخيص الحالة بناءً على المعايير المفعلة في الإعدادات (مثلاً: معايير AAOIFI).</p>
+        <p>قمنا ببرمجة منطق (Logic) يقوم بفحص 5 بنود أساسية (مشروعية النشاط، وجود أصل حقيقي، وضوح الثمن، تجنب الغرر، والشفافية). إذا توافرت جميع البنود، يطبع النظام نتيجة "متوافق شرعياً"، ويتيح تصدير شهادة المطابقة كملف نصي.</p>
+    </div>
+
+    <div style="text-align: center; margin-top: 50px; color: #6B7280; font-size: 14px;">
+        تم إعداد هذا التوثيق للمساعدة في فهم الهيكل البرمجي والتشغيلي لمنصة Smart Finance Risk Platform.
+    </div>
+
+</div>
+
+</body>
+</html>

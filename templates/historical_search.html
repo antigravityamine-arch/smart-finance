@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+{% block title %}البحث التاريخي{% endblock %}
+{% block head %}
+<style>
+    .search-hero {
+        background: linear-gradient(135deg, #063B2E 0%, #0F5C45 100%);
+        border-radius: 16px;
+        padding: 35px 30px;
+        margin-bottom: 25px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    .search-hero::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -30%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(184,137,23,0.1) 0%, transparent 70%);
+    }
+    .search-hero h2 { font-size: 22px; margin-bottom: 8px; position: relative; z-index: 1; }
+    .search-hero p { color: #B88917; font-size: 14px; margin-bottom: 20px; position: relative; z-index: 1; }
+    .search-hero .data-badge {
+        display: inline-block;
+        background: rgba(184,137,23,0.2);
+        border: 1px solid rgba(184,137,23,0.4);
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        color: #B88917;
+        margin-bottom: 15px;
+        position: relative;
+        z-index: 1;
+    }
+    .search-form {
+        display: flex;
+        gap: 12px;
+        position: relative;
+        z-index: 1;
+    }
+    .search-form input {
+        flex: 1;
+        padding: 14px 20px;
+        border: 2px solid rgba(255,255,255,0.2);
+        border-radius: 12px;
+        background: rgba(255,255,255,0.1);
+        color: white;
+        font-size: 16px;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s;
+    }
+    .search-form input::placeholder { color: rgba(255,255,255,0.5); }
+    .search-form input:focus { outline: none; border-color: #B88917; background: rgba(255,255,255,0.15); }
+    .search-form button {
+        padding: 14px 30px;
+        background: #B88917;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        white-space: nowrap;
+    }
+    .search-form button:hover { background: #D4A01E; transform: translateY(-1px); }
+
+    .sample-ids {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+        position: relative;
+        z-index: 1;
+    }
+    .sample-id {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        color: rgba(255,255,255,0.7);
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+    .sample-id:hover { background: rgba(184,137,23,0.3); color: white; border-color: #B88917; }
+
+    .error-box {
+        background: #FEF2F2;
+        border: 1px solid #FECACA;
+        border-radius: 12px;
+        padding: 15px 20px;
+        color: #991B1B;
+        font-size: 14px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .result-header {
+        background: white;
+        border-radius: 12px;
+        padding: 20px 25px;
+        border: 1px solid #E1D8C6;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .result-header .client-id { font-size: 20px; font-weight: 700; color: #14213D; }
+    .result-header .target-badge {
+        padding: 6px 18px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    .target-badge.defaulted { background: #FEE2E2; color: #991B1B; }
+    .target-badge.ok { background: #D1FAE5; color: #065F46; }
+
+    .data-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .data-section {
+        background: white;
+        border-radius: 12px;
+        padding: 20px 25px;
+        border: 1px solid #E1D8C6;
+    }
+    .data-section h3 {
+        font-size: 15px;
+        color: #14213D;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #E1D8C6;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .data-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        font-size: 13px;
+        border-bottom: 1px solid #F0EBE0;
+    }
+    .data-row:last-child { border-bottom: none; }
+    .data-row .key { color: #6B7280; max-width: 55%; word-break: break-all; }
+    .data-row .val { color: #14213D; font-weight: 600; text-align: left; max-width: 45%; word-break: break-all; }
+
+    .full-data {
+        background: white;
+        border-radius: 12px;
+        padding: 20px 25px;
+        border: 1px solid #E1D8C6;
+        margin-bottom: 20px;
+    }
+    .full-data h3 {
+        font-size: 15px;
+        color: #14213D;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #E1D8C6;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .full-data h3 .toggle-icon { font-size: 12px; color: #6B7280; transition: transform 0.3s; }
+    .collapsible { display: none; }
+    .collapsible.open { display: block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <h1>🔍 البحث التاريخي</h1>
+        <p>البحث في قاعدة البيانات التاريخية (raw_data.csv)</p>
+    </div>
+    <div class="info">
+        <span>👤 مسؤول المخاطر</span>
+    </div>
+</div>
+
+<div class="search-hero">
+    {% if data_loaded %}
+    <div class="data-badge">📂 {{ "{:,}".format(total_records) }} سجل متاح في قاعدة البيانات</div>
+    {% endif %}
+    <h2>البحث عن عميل في السجلات التاريخية</h2>
+    <p>أدخل رقم معرف العميل (SK_ID_CURR) للبحث في كامل قاعدة البيانات</p>
+    <form class="search-form" method="GET" action="{{ url_for('historical_search') }}">
+        <input type="text" name="sk_id" placeholder="أدخل رقم العميل مثل 100002..." value="{{ search_id or '' }}">
+        <button type="submit">🔍 بحث</button>
+    </form>
+    {% if sample_ids %}
+    <div class="sample-ids">
+        <span style="font-size:12px; color:rgba(255,255,255,0.5);">أمثلة:</span>
+        {% for sid in sample_ids %}
+        <a href="{{ url_for('historical_search', sk_id=sid) }}" class="sample-id">{{ sid }}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+{% if error %}
+<div class="error-box">
+    <span>⚠️</span> {{ error }}
+</div>
+{% endif %}
+
+{% if result %}
+<div class="result-header">
+    <div>
+        <div class="client-id">العميل رقم: {{ result.get('SK_ID_CURR', 'N/A') }}</div>
+        <div style="color:#6B7280; font-size:13px; margin-top:4px;">
+            {{ result.get('NAME_CONTRACT_TYPE', '') }} | {{ result.get('CODE_GENDER', '') }}
+        </div>
+    </div>
+    <div style="display: flex; gap: 15px; align-items: center;">
+        <a href="{{ url_for('import_historical', client_id=result.get('SK_ID_CURR')) }}" class="target-badge" style="background:#B88917; color:white; text-decoration:none; display:flex; align-items:center; gap:5px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';" onmouseout="this.style.transform='none';">
+            📥 استيراد إلى العملاء
+        </a>
+        
+        {% if result.get('TARGET') is not none and result.get('TARGET') != 'غير متوفر' %}
+        <div class="target-badge {% if result.get('TARGET')|int == 1 %}defaulted{% else %}ok{% endif %}">
+            {% if result.get('TARGET')|int == 1 %}⚠️ متعثر{% else %}✅ غير متعثر{% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="data-sections">
+    <!-- معلومات شخصية -->
+    <div class="data-section">
+        <h3>👤 المعلومات الشخصية</h3>
+        <div class="data-row"><span class="key">الجنس</span><span class="val">{{ result.get('CODE_GENDER', 'غير متوفر') }}</span></div>
+        <div class="data-row"><span class="key">العمر (تقريبي)</span><span class="val">{% if result.get('DAYS_BIRTH') != 'غير متوفر' %}{{ (result.get('DAYS_BIRTH', 0)|float|abs / 365)|round(0)|int }} سنة{% else %}غير متوفر{% endif %}</span></div>
+        <div class="data-row"><span class="key">عدد الأطفال</span><span class="val">{{ result.get('CNT_CHILDREN', 'غير متوفر') }}</span></div>
+        <div class="data-row"><span class="key">عدد أفراد الأسرة</span><span class="val">{{ result.get('CNT_FAM_MEMBERS', 'غير متوفر') }}</span></div>
+        <div class="data-row"><span class="key">الحالة العائلية</span><span class="val">{{ result.get('NAME_FAMILY_STATUS', 'غير متوفر') }}</span></div>
+        <div class="data-row"><span class="key">نوع السكن</span><span class="val">{{ result.get('NAME_HOUSING_TYPE', 'غير متوفر') }}</span></div>
+        <div class="data-row"><span class="key">يملك سيارة</span><span class="val">{{ result.get('FLAG_OWN_CAR', 'غير متوفر') }}</span></div>
+        <div class="data-row"><span class="key">يملك عقار</span><span class="val">{{ result.get('FLAG_OWN_REALTY', 'غير متوفر') }}</span></div>
+    </div>
+
+    <!-- معلومات مالية -->
+    <div class="data-section">
+        <h3>💰 المعلومات المالية</h3>
+        <div class="data-row"><span class="key">إجمالي الدخل</span><span class="val">{{ "{:,.0f}".format(result.get('AMT_INCOME_TOTAL', 0)|float) if result.get('AMT_INCOME_TOTAL') != 'غير متوفر' else 'غير متوفر' }}</span></div>
+        <div class="data-row"><span class="key">مبلغ القرض</span><span class="val">{{ "{:,.0f}".format(result.get('AMT_CREDIT', 0)|float) if result.get('AMT_CREDIT') != 'غير متوفر' else 'غير متوفر' }}</span></div>
+        <div class="data-row"><span class="key">القسط السنوي</span><span class="val">{{ "{:,.0f}".format(result.get('AMT_ANNUITY', 0)|float) if result.get('AMT_ANNUITY') != 'غير متوفر' else 'غير متوفر' }}</span></div>
+        <div class="data-row"><span class="key">سعر السلعة</span><span class="val">{{ "{:,.0f}".format(result.get('AMT_GOODS_PRICE', 0)|float) if result.get('AMT_GOODS_PRICE') != 'غير متوفر' else 'غير متوفر' }}</span></div>
+        <div class="data-row"><span class="key">نوع العقد</span><span class="val">{{ result.get('NAME_CONTRACT_TYPE', 'غير متوفر') }}</span></div>
+        <div class="data-row"><span class="key">نوع الدخل</span><span class="val">{{ result.get('NAME_INCOME_TYPE', 'غير متوفر') }}</span></div>
+    </div>
+
+    <!-- معلومات مهنية -->
+    <div class="data-section">
+        <h3>💼 المعلومات المهنية</h3>
+        <div class="data-row"><span class="key">مستوى التعليم</span><span class="val">{{ result.get('NAME_EDUCATION_TYPE', 'غير متوفر') }}</span></div>
+        <div class="data-row"><span class="key">نوع المهنة</span><span class="val">{{ result.get('OCCUPATION_TYPE', 'غير متوفر') }}</span></div>
+        <div class="data-row"><span class="key">نوع المؤسسة</span><span class="val">{{ result.get('ORGANIZATION_TYPE', 'غير متوفر') }}</span></div>
+        <div class="data-row"><span class="key">أيام العمل</span><span class="val">{% if result.get('DAYS_EMPLOYED') != 'غير متوفر' %}{{ (result.get('DAYS_EMPLOYED', 0)|float|abs / 365)|round(1) }} سنة{% else %}غير متوفر{% endif %}</span></div>
+    </div>
+
+    <!-- مصادر خارجية -->
+    <div class="data-section">
+        <h3>📊 التقييمات الخارجية</h3>
+        <div class="data-row"><span class="key">EXT_SOURCE_1</span><span class="val">{% if result.get('EXT_SOURCE_1') != 'غير متوفر' %}{{ "%.4f"|format(result.get('EXT_SOURCE_1', 0)|float) }}{% else %}غير متوفر{% endif %}</span></div>
+        <div class="data-row"><span class="key">EXT_SOURCE_2</span><span class="val">{% if result.get('EXT_SOURCE_2') != 'غير متوفر' %}{{ "%.4f"|format(result.get('EXT_SOURCE_2', 0)|float) }}{% else %}غير متوفر{% endif %}</span></div>
+        <div class="data-row"><span class="key">EXT_SOURCE_3</span><span class="val">{% if result.get('EXT_SOURCE_3') != 'غير متوفر' %}{{ "%.4f"|format(result.get('EXT_SOURCE_3', 0)|float) }}{% else %}غير متوفر{% endif %}</span></div>
+        <div class="data-row"><span class="key">تصنيف المنطقة</span><span class="val">{{ result.get('REGION_RATING_CLIENT', 'غير متوفر') }}</span></div>
+    </div>
+</div>
+
+<!-- كل البيانات -->
+<div class="full-data">
+    <h3 onclick="toggleAll()">📋 جميع البيانات ({{ result|length }} حقل) <span class="toggle-icon" id="toggleIcon">▼</span></h3>
+    <div class="collapsible" id="allData">
+        {% for key, val in result.items() %}
+        <div class="data-row">
+            <span class="key">{{ key }}</span>
+            <span class="val">{{ val }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function toggleAll() {
+    var el = document.getElementById('allData');
+    var icon = document.getElementById('toggleIcon');
+    el.classList.toggle('open');
+    icon.textContent = el.classList.contains('open') ? '▲' : '▼';
+}
+</script>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% block title %}تعديل العميل {{ client.id }}{% endblock %}
+{% block head %}
+<style>
+    .edit-container {
+        max-width: 600px;
+    }
+    .edit-card {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        border: 1px solid #E1D8C6;
+        margin-bottom: 20px;
+    }
+    .edit-card h2 {
+        font-size: 18px;
+        color: #14213D;
+        margin-bottom: 5px;
+    }
+    .edit-card .subtitle {
+        color: #6B7280;
+        font-size: 13px;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #E1D8C6;
+    }
+    .form-group {
+        margin-bottom: 18px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        color: #6B7280;
+        font-weight: 600;
+    }
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #E1D8C6;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #14213D;
+        background: #FAFAF7;
+        transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus {
+        outline: none;
+        border-color: #B88917;
+        background: white;
+    }
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #E1D8C6;
+    }
+    .btn-save {
+        padding: 12px 25px;
+        background: #063B2E;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-save:hover { background: #0F5C45; }
+    .btn-cancel {
+        padding: 12px 25px;
+        background: #F8F5EC;
+        color: #14213D;
+        border: 1px solid #E1D8C6;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+    .btn-cancel:hover { background: #E1D8C6; }
+    .client-badge {
+        display: inline-block;
+        background: #063B2E;
+        color: #B88917;
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+    .current-risk {
+        background: #F8F5EC;
+        border: 1px solid #E1D8C6;
+        border-radius: 8px;
+        padding: 12px 15px;
+        font-size: 13px;
+        color: #6B7280;
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="topbar">
+    <div>
+        <div class="breadcrumb"><a href="{{ url_for('clients') }}">العملاء</a> / تعديل العميل</div>
+        <h1>✏️ تعديل بيانات العميل</h1>
+    </div>
+    <div class="info">
+        <span>👤 مسؤول المخاطر</span>
+    </div>
+</div>
+
+<div class="edit-container">
+    <div class="edit-card">
+        <h2>تعديل بيانات العميل</h2>
+        <div class="subtitle">قم بتعديل البيانات المطلوبة ثم اضغط "حفظ التعديلات". سيتم إعادة حساب مستوى الخطر تلقائياً.</div>
+        <form method="POST" action="{{ url_for('edit_client_route', client_id=client.id) }}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>معرف العميل</label>
+                    <input type="text" name="id" value="{{ client.id }}" readonly style="background-color: #f3f4f6; cursor: not-allowed; color: #6b7280; border: 1px solid #d1d5db;">
+                </div>
+                <div class="form-group">
+                    <label>اسم العميل</label>
+                    <input type="text" name="name" value="{{ client.name }}" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>العمر</label>
+                    <input type="number" name="age" value="{{ client.age }}" required min="18" max="99">
+                </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>الحالة المهنية</label>
+                    <select name="job">
+                        <option value="موظف" {% if client.job == 'موظف' %}selected{% endif %}>موظف</option>
+                        <option value="تاجر" {% if client.job == 'تاجر' %}selected{% endif %}>تاجر</option>
+                        <option value="مدير" {% if client.job == 'مدير' %}selected{% endif %}>مدير</option>
+                        <option value="طالب" {% if client.job == 'طالب' %}selected{% endif %}>طالب</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>الدخل الشهري (درهم)</label>
+                    <input type="number" name="income" value="{{ client.income|int }}" required min="0">
+                </div>
+                <div class="form-group">
+                    <label>مبلغ التمويل المطلوب (درهم)</label>
+                    <input type="number" name="loan_amount" value="{{ client.loan_amount|int }}" required min="0">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>نوع التمويل</label>
+                <select name="finance_type">
+                    <option value="تقليدي" {% if client.finance_type == 'تقليدي' %}selected{% endif %}>تقليدي</option>
+                    <option value="تشاركي" {% if client.finance_type == 'تشاركي' %}selected{% endif %}>تشاركي</option>
+                </select>
+            </div>
+            
+            <div class="current-risk">
+                ℹ️ مستوى الخطر الحالي: 
+                <strong>
+                {% if client.risk_level == 'منخفض' %}
+                    <span style="color:#0F7A4F">● منخفض</span>
+                {% elif client.risk_level == 'متوسط' %}
+                    <span style="color:#C76A00">● متوسط</span>
+                {% else %}
+                    <span style="color:#A83232">● مرتفع</span>
+                {% endif %}
+                </strong>
+                — سيُعاد حسابه تلقائياً بعد التعديل
+            </div>
+            
+            <div class="form-actions">
+                <a href="{{ url_for('clients') }}" class="btn-cancel">إلغاء</a>
+                <button type="submit" class="btn-save">💾 حفظ التعديلات</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
