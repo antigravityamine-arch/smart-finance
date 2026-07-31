@@ -28,11 +28,15 @@ USE_FIREBASE = False
 if 'PYTHONANYWHERE_SITE' not in os.environ:
     try:
         if not firebase_admin._apps:
-            cred = credentials.Certificate('firebase_credentials.json')
-            firebase_admin.initialize_app(cred)
-        db = firestore.client()
-        USE_FIREBASE = True
-        print("Firebase initialized successfully (Local Environment)")
+            cred_path = os.path.join(os.path.dirname(__file__), 'firebase_credentials.json')
+            if os.path.exists(cred_path):
+                cred = credentials.Certificate(cred_path)
+                firebase_admin.initialize_app(cred)
+                db = firestore.client()
+                USE_FIREBASE = True
+                print("Firebase initialized successfully (Local Environment)")
+            else:
+                print("firebase_credentials.json not found, falling back to SQLite")
     except Exception as e:
         print(f"Failed to initialize Firebase, falling back to SQLite: {e}")
 
@@ -184,7 +188,7 @@ def save_user(username, password, full_name):
 # تحميل النموذج
 model = None
 feature_names = []
-model_path = os.path.join('model', 'xgb_final_model.pkl')
+model_path = os.path.join(os.path.dirname(__file__), 'model', 'xgb_final_model.pkl')
 if os.path.exists(model_path):
     model = joblib.load(model_path)
     if hasattr(model, 'feature_names_in_'):
@@ -195,8 +199,10 @@ if os.path.exists(model_path):
 baseline_profile = {}
 try:
     import json
-    with open('baseline_profile.json', 'r', encoding='utf-8') as f:
-        baseline_profile = json.load(f)
+    profile_path = os.path.join(os.path.dirname(__file__), 'baseline_profile.json')
+    if os.path.exists(profile_path):
+        with open(profile_path, 'r', encoding='utf-8') as f:
+            baseline_profile = json.load(f)
 except Exception as e:
     print(f"Error loading baseline profile: {e}")
 
@@ -893,6 +899,30 @@ def analytics():
 def analytics_data():
     """API لجلب بيانات الإحصائيات للرسوم البيانية"""
     return jsonify(RAW_DATA_STATS)
+
+
+@app.route('/debug_db')
+def debug_db():
+    info = {
+        'USE_FIREBASE': USE_FIREBASE,
+        'db_initialized': db is not None,
+        'os_environ_PYTHONANYWHERE_SITE': 'PYTHONANYWHERE_SITE' in os.environ,
+        'smart_finance_db_exists': os.path.exists(DB_FILE),
+        'sqlite_clients_count': 0,
+        'sqlite_users_count': 0,
+        'sqlite_error': None
+    }
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM clients")
+        info['sqlite_clients_count'] = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM users")
+        info['sqlite_users_count'] = cursor.fetchone()[0]
+        conn.close()
+    except Exception as e:
+        info['sqlite_error'] = str(e)
+    return jsonify(info)
 
 
 if __name__ == '__main__':
