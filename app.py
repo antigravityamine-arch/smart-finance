@@ -21,8 +21,29 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+# تهيئة قاعدة البيانات (Firebase للمحلي، و SQLite للمرفوع على PythonAnywhere)
+db = None
+USE_FIREBASE = False
+
+if 'PYTHONANYWHERE_SITE' not in os.environ:
+    try:
+        if not firebase_admin._apps:
+            cred = credentials.Certificate('firebase_credentials.json')
+            firebase_admin.initialize_app(cred)
+        db = firestore.client()
+        USE_FIREBASE = True
+        print("Firebase initialized successfully (Local Environment)")
+    except Exception as e:
+        print(f"Failed to initialize Firebase, falling back to SQLite: {e}")
 
 def get_all_clients():
+    if USE_FIREBASE and db:
+        try:
+            docs = db.collection('clients').order_by('id', direction=firestore.Query.DESCENDING).stream()
+            return [doc.to_dict() for doc in docs]
+        except Exception as e:
+            print(f"Firestore get_all_clients error: {e}")
+            
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -35,6 +56,14 @@ def get_all_clients():
         return []
 
 def get_client(client_id):
+    if USE_FIREBASE and db:
+        try:
+            doc = db.collection('clients').document(client_id).get()
+            if doc.exists:
+                return doc.to_dict()
+        except Exception as e:
+            print(f"Firestore get_client error: {e}")
+            
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -48,6 +77,13 @@ def get_client(client_id):
     return None
 
 def save_client(client_data):
+    if USE_FIREBASE and db:
+        try:
+            db.collection('clients').document(client_data['id']).set(client_data)
+            return
+        except Exception as e:
+            print(f"Firestore save_client error: {e}")
+            
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -58,6 +94,13 @@ def save_client(client_data):
         print(f"SQLite save_client error: {e}")
 
 def delete_client(client_id):
+    if USE_FIREBASE and db:
+        try:
+            db.collection('clients').document(client_id).delete()
+            return True
+        except Exception as e:
+            print(f"Firestore delete_client error: {e}")
+            
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -70,6 +113,13 @@ def delete_client(client_id):
         return False
 
 def update_client(client_id, updated_data):
+    if USE_FIREBASE and db:
+        try:
+            db.collection('clients').document(client_id).update(updated_data)
+            return True
+        except Exception as e:
+            print(f"Firestore update_client error: {e}")
+            
     try:
         client = get_client(client_id)
         if client:
@@ -81,6 +131,14 @@ def update_client(client_id, updated_data):
     return False
 
 def get_user(username):
+    if USE_FIREBASE and db:
+        try:
+            doc = db.collection('users').document(username).get()
+            if doc.exists:
+                return doc.to_dict()
+        except Exception as e:
+            print(f"Firestore get_user error: {e}")
+            
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -99,6 +157,18 @@ def get_user(username):
     return None
 
 def save_user(username, password, full_name):
+    if USE_FIREBASE and db:
+        try:
+            db.collection('users').document(username).set({
+                'username': username,
+                'password': password,
+                'full_name': full_name,
+                'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
+            return True
+        except Exception as e:
+            print(f"Firestore save_user error: {e}")
+            
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
