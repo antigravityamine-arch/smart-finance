@@ -11,81 +11,105 @@ from firebase_admin import credentials, firestore
 app = Flask(__name__)
 app.secret_key = 'smart_finance_super_secret_key'
 
-# تهيئة Firebase
-try:
-    if not firebase_admin._apps:
-        cred = credentials.Certificate('firebase_credentials.json')
-        firebase_admin.initialize_app(cred)
-    db = firestore.client()
-except Exception as e:
-    print(f"Error initializing Firebase: {e}")
-    db = None
+import sqlite3
+import json
+
+DB_FILE = os.path.join(os.path.dirname(__file__), 'smart_finance.db')
+
+def get_db_connection():
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
 
 def get_all_clients():
-    if db:
-        try:
-            docs = db.collection('clients').order_by('id', direction=firestore.Query.DESCENDING).stream()
-            return [doc.to_dict() for doc in docs]
-        except Exception as e:
-            print(f"Firestore error: {e}")
-            return []
-    return []
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT data FROM clients ORDER BY id DESC")
+        rows = cursor.fetchall()
+        conn.close()
+        return [json.loads(row['data']) for row in rows]
+    except Exception as e:
+        print(f"SQLite get_all_clients error: {e}")
+        return []
 
 def get_client(client_id):
-    if db:
-        doc = db.collection('clients').document(client_id).get()
-        if doc.exists:
-            return doc.to_dict()
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT data FROM clients WHERE id = ?", (client_id,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return json.loads(row['data'])
+    except Exception as e:
+        print(f"SQLite get_client error: {e}")
     return None
 
 def save_client(client_data):
-    if db:
-        db.collection('clients').document(client_data['id']).set(client_data)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("INSERT OR REPLACE INTO clients (id, data) VALUES (?, ?)", (client_data['id'], json.dumps(client_data)))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"SQLite save_client error: {e}")
 
 def delete_client(client_id):
-    if db:
-        try:
-            db.collection('clients').document(client_id).delete()
-            return True
-        except Exception as e:
-            print(f"Error deleting client: {e}")
-            return False
-    return False
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM clients WHERE id = ?", (client_id,))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"SQLite delete_client error: {e}")
+        return False
 
 def update_client(client_id, updated_data):
-    if db:
-        try:
-            db.collection('clients').document(client_id).update(updated_data)
+    try:
+        client = get_client(client_id)
+        if client:
+            client.update(updated_data)
+            save_client(client)
             return True
-        except Exception as e:
-            print(f"Error updating client: {e}")
-            return False
+    except Exception as e:
+        print(f"SQLite update_client error: {e}")
     return False
 
 def get_user(username):
-    if db:
-        try:
-            doc = db.collection('users').document(username).get()
-            if doc.exists:
-                return doc.to_dict()
-        except Exception as e:
-            print(f"Error getting user: {e}")
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT password, full_name, created_at FROM users WHERE username = ?", (username,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return {
+                'username': username,
+                'password': row['password'],
+                'full_name': row['full_name'],
+                'created_at': row['created_at']
+            }
+    except Exception as e:
+        print(f"SQLite get_user error: {e}")
     return None
 
 def save_user(username, password, full_name):
-    if db:
-        try:
-            db.collection('users').document(username).set({
-                'username': username,
-                'password': password,
-                'full_name': full_name,
-                'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            })
-            return True
-        except Exception as e:
-            print(f"Error saving user: {e}")
-            return False
-    return False
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("INSERT OR REPLACE INTO users (username, password, full_name, created_at) VALUES (?, ?, ?, ?)", 
+                       (username, password, full_name, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"SQLite save_user error: {e}")
+        return False
 
 # تحميل النموذج
 model = None
@@ -333,12 +357,29 @@ def predict_client_risk(client, historical_data=None):
         prob = np.random.uniform(0.05, 0.55)
     return float(prob)
 
-def seed_firebase_if_empty():
-    if db is None: return
+def init_db():
     try:
-        clients_ref = db.collection('clients')
-        if len(list(clients_ref.limit(1).stream())) == 0:
-            print("Seeding Firebase with mock data...")
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS clients (
+                id TEXT PRIMARY KEY,
+                data TEXT
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                username TEXT PRIMARY KEY,
+                password TEXT,
+                full_name TEXT,
+                created_at TEXT
+            )
+        ''')
+        conn.commit()
+        
+        cursor.execute("SELECT COUNT(*) FROM clients")
+        if cursor.fetchone()[0] == 0:
+            print("Seeding SQLite with mock data...")
             MOCK_DATA = [
                 {"id": "CLT-2025-00125", "age": 34, "income": 12000, "loan_amount": 80000, "job": "موظف", "finance_type": "تشاركي", "date": "12/04/2025"},
                 {"id": "CLT-2025-00124", "age": 28, "income": 8000, "loan_amount": 50000, "job": "موظف", "finance_type": "تقليدي", "date": "10/04/2025"},
@@ -351,11 +392,13 @@ def seed_firebase_if_empty():
             for c in MOCK_DATA:
                 c['risk_prob'] = predict_client_risk(c)
                 c['risk_level'] = get_risk_level(c['risk_prob'])
-                clients_ref.document(c['id']).set(c)
+                cursor.execute("INSERT OR REPLACE INTO clients (id, data) VALUES (?, ?)", (c['id'], json.dumps(c)))
+            conn.commit()
+        conn.close()
     except Exception as e:
-        print(f"Error seeding data: {e}")
+        print(f"Error seeding SQLite: {e}")
 
-seed_firebase_if_empty()
+init_db()
 
 # Login Decorator
 def login_required(f):
