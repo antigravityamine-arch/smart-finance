@@ -43,10 +43,10 @@ if 'PYTHONANYWHERE_SITE' not in os.environ:
 def get_all_clients():
     if USE_FIREBASE and db:
         try:
-            docs = db.collection('clients').order_by('id', direction=firestore.Query.DESCENDING).stream()
+            docs = db.collection('clients').order_by('id', direction=firestore.Query.DESCENDING).stream(timeout=5.0)
             return [doc.to_dict() for doc in docs]
         except Exception as e:
-            print(f"Firestore get_all_clients error: {e}")
+            print(f"Firestore get_all_clients error (timing out/offline): {e}")
             
     try:
         conn = get_db_connection()
@@ -62,11 +62,11 @@ def get_all_clients():
 def get_client(client_id):
     if USE_FIREBASE and db:
         try:
-            doc = db.collection('clients').document(client_id).get()
+            doc = db.collection('clients').document(client_id).get(timeout=5.0)
             if doc.exists:
                 return doc.to_dict()
         except Exception as e:
-            print(f"Firestore get_client error: {e}")
+            print(f"Firestore get_client error (timing out/offline): {e}")
             
     try:
         conn = get_db_connection()
@@ -83,10 +83,10 @@ def get_client(client_id):
 def save_client(client_data):
     if USE_FIREBASE and db:
         try:
-            db.collection('clients').document(client_data['id']).set(client_data)
+            db.collection('clients').document(client_data['id']).set(client_data, timeout=5.0)
             return
         except Exception as e:
-            print(f"Firestore save_client error: {e}")
+            print(f"Firestore save_client error (timing out/offline): {e}")
             
     try:
         conn = get_db_connection()
@@ -100,10 +100,10 @@ def save_client(client_data):
 def delete_client(client_id):
     if USE_FIREBASE and db:
         try:
-            db.collection('clients').document(client_id).delete()
+            db.collection('clients').document(client_id).delete(timeout=5.0)
             return True
         except Exception as e:
-            print(f"Firestore delete_client error: {e}")
+            print(f"Firestore delete_client error (timing out/offline): {e}")
             
     try:
         conn = get_db_connection()
@@ -119,10 +119,10 @@ def delete_client(client_id):
 def update_client(client_id, updated_data):
     if USE_FIREBASE and db:
         try:
-            db.collection('clients').document(client_id).update(updated_data)
+            db.collection('clients').document(client_id).update(updated_data, timeout=5.0)
             return True
         except Exception as e:
-            print(f"Firestore update_client error: {e}")
+            print(f"Firestore update_client error (timing out/offline): {e}")
             
     try:
         client = get_client(client_id)
@@ -137,11 +137,11 @@ def update_client(client_id, updated_data):
 def get_user(username):
     if USE_FIREBASE and db:
         try:
-            doc = db.collection('users').document(username).get()
+            doc = db.collection('users').document(username).get(timeout=5.0)
             if doc.exists:
                 return doc.to_dict()
         except Exception as e:
-            print(f"Firestore get_user error: {e}")
+            print(f"Firestore get_user error (timing out/offline): {e}")
             
     try:
         conn = get_db_connection()
@@ -168,10 +168,10 @@ def save_user(username, password, full_name):
                 'password': password,
                 'full_name': full_name,
                 'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            })
+            }, timeout=5.0)
             return True
         except Exception as e:
-            print(f"Firestore save_user error: {e}")
+            print(f"Firestore save_user error (timing out/offline): {e}")
             
     try:
         conn = get_db_connection()
